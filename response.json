@@ -1,0 +1,632 @@
+{
+    "root": {
+        "id": "root",
+        "text": "Sensors",
+        "children": [
+            {
+                "id": "classification",
+                "text": "Sensor Classification",
+                "children": [
+                    {
+                        "id": "detection",
+                        "text": "Detection Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "In detection mode, sensors simply detect a particular physical or chemical quantity and measure it directly.",
+                                "children": [
+                                    {
+                                        "id": "how-it-works",
+                                        "text": "Detection sensors typically generate an output that is directly proportional to the magnitude of the stimulus they are measuring.",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Thermocouples, Photodetectors, Gas sensors",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "comparison",
+                                "text": "Comparison Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Comparison mode sensors are designed to measure a specific parameter by comparing the detected signal to a pre-set reference value or threshold.",
+                                        "children": [
+                                            {
+                                                "id": "how-it-works",
+                                                "text": "In comparison mode, the sensor might have an internal reference against which it compares the input signal.",
+                                                "children": []
+                                            },
+                                            {
+                                                "id": "examples",
+                                                "text": "Examples: Thermostats, Comparator sensors, Level sensors",
+                                                "children": []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": "modular",
+                        "text": "Modular Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Modular sensors typically rely on external energy sources to operate.",
+                                "children": [
+                                    {
+                                        "id": "how-it-works",
+                                        "text": "Modular sensors either passively detect signals or measure energy already present in the environment.",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "applications",
+                                        "text": "Applications: Smart home devices, Weather stations, Environmental monitoring systems",
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": "generator",
+                        "text": "Generator Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Generator sensors are designed to generate energy on their own for the purpose of detecting signals or stimuli in the environment.",
+                                "children": [
+                                    {
+                                        "id": "how-it-works",
+                                        "text": "Generator sensors harness external physical energy to produce their own power.",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "applications",
+                                        "text": "Applications: Remote sensing, Wearable devices, IoT systems",
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "based-on-type",
+                "text": "Based on Type of Data Collected",
+                "children": [
+                    {
+                        "id": "environmental",
+                        "text": "Environmental Sensors",
+                        "children": [
+                            {
+                                "id": "temperature",
+                                "text": "Temperature Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Measure temperature (e.g., thermistors, thermocouples)",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Thermocouples, Photodetectors, Gas sensors",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "humidity",
+                                "text": "Humidity Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Measure relative humidity in the environment (e.g., capacitive, resistive sensors)",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Capacitive, resistive sensors",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "gas",
+                                "text": "Gas Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Detect gases like carbon dioxide (CO2), carbon monoxide (CO), methane (CH4), etc.",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Gas detectors for CO2, CO, methane",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "air-quality",
+                                "text": "Air Quality Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Measure pollutants like nitrogen dioxide (NO2), ozone (O3), particulate matter (PM2.5, PM10)",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Air quality monitors",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "pressure",
+                                "text": "Pressure Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Measure atmospheric pressure or fluid pressure (e.g., barometers, piezoelectric sensors)",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Barometers, piezoelectric sensors",
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": "motion",
+                        "text": "Motion Sensors",
+                        "children": [
+                            {
+                                "id": "accelerometers",
+                                "text": "Accelerometers",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Measure acceleration or vibration, often used for detecting motion or orientation",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Accelerometers, gyroscopes",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "gyroscopes",
+                                "text": "Gyroscopes",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Measure angular velocity and orientation, commonly used in navigation systems",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Gyroscopes, accelerometers",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "proximity",
+                                "text": "Proximity Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Detect the presence or absence of an object within a specified range (e.g., capacitive, inductive sensors)",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Capacitive, inductive sensors",
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "based-on-technology",
+                "text": "Based on Technology Used",
+                "children": [
+                    {
+                        "id": "mechanical",
+                        "text": "Mechanical Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Measure physical parameters such as pressure, force, or displacement through mechanical deflection or strain",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: Pressure sensors, force sensors",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "chemical",
+                        "text": "Chemical Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Detect the presence of chemicals or specific gases (e.g., gas detectors for CO2, CO, methane)",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: Gas detectors for CO2, CO, methane",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "optical",
+                        "text": "Optical Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Utilize light to detect changes in the environment (e.g., LIDAR, photodetectors)",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: LIDAR, photodetectors",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "electromagnetic",
+                        "text": "Electromagnetic Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Measure changes in electromagnetic fields (e.g., RFID tags, electromagnetic radiation detectors)",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: RFID tags, electromagnetic radiation detectors",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "thermal",
+                        "text": "Thermal Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Measure temperature or thermal radiation, often through infrared (IR) sensors",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: Infrared (IR) sensors",
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "based-on-application",
+                "text": "Based on Application",
+                "children": [
+                    {
+                        "id": "smart-home",
+                        "text": "Smart Home Sensors",
+                        "children": [
+                            {
+                                "id": "motion-sensors",
+                                "text": "Motion Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Used for security and automation",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Motion sensors, temperature sensors",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "temperature-sensors",
+                                "text": "Temperature Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Used for smart thermostats",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Thermocouples, thermistors",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "smoke-fire-sensors",
+                                "text": "Smoke/Fire Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Used for safety and security",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Smoke detectors, fire alarms",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "light-sensors",
+                                "text": "Light Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Used for automatic lighting control",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Light sensors, photodetectors",
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": "wearable",
+                        "text": "Wearable Sensors",
+                        "children": [
+                            {
+                                "id": "heart-rate-monitors",
+                                "text": "Heart Rate Monitors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Used for wearable fitness trackers",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Heart rate monitors, accelerometers",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "accelerometers-gyroscopes",
+                                "text": "Accelerometers and Gyroscopes",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Used for activity tracking, motion sensing",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Accelerometers, gyroscopes",
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    {
+                        "id": "healthcare",
+                        "text": "Healthcare Sensors",
+                        "children": [
+                            {
+                                "id": "ecg-sensors",
+                                "text": "ECG Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Used for monitoring heart activity",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: ECG sensors, blood oxygen sensors",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "blood-oxygen-sensors",
+                                "text": "Blood Oxygen Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Used in devices like pulse oximeters",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Blood oxygen sensors, pulse oximeters",
+                                        "children": []
+                                    }
+                                ]
+                            },
+                            {
+                                "id": "glucose-sensors",
+                                "text": "Glucose Sensors",
+                                "children": [
+                                    {
+                                        "id": "description",
+                                        "text": "Used for diabetic monitoring",
+                                        "children": []
+                                    },
+                                    {
+                                        "id": "examples",
+                                        "text": "Examples: Glucose sensors, insulin pumps",
+                                        "children": []
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "based-on-sensing-mechanism",
+                "text": "Based on Sensing Mechanism",
+                "children": [
+                    {
+                        "id": "active",
+                        "text": "Active Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Emit energy and then detect the reflected energy",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: Radar sensors, LIDAR sensors",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "passive",
+                        "text": "Passive Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Detect the ambient energy in the environment without emitting any energy",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: Temperature sensors, pressure sensors",
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "based-on-response-to-stimuli",
+                "text": "Based on Response to Stimuli",
+                "children": [
+                    {
+                        "id": "analog",
+                        "text": "Analog Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Provide continuous output signals that vary in proportion to the measured parameter",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: Thermistors, photodiodes",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "digital",
+                        "text": "Digital Sensors",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "Provide discrete outputs, typically either ON or OFF based on a threshold",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: Digital temperature sensors, proximity sensors",
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "software-vs-hardware",
+                "text": "Software vs. Hardware Sensor",
+                "children": [
+                    {
+                        "id": "hardware",
+                        "text": "Hardware Sensor",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "A physical device that detects and measures physical phenomena",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: Thermometers, accelerometers, cameras",
+                                "children": []
+                            }
+                        ]
+                    },
+                    {
+                        "id": "software",
+                        "text": "Software Sensor",
+                        "children": [
+                            {
+                                "id": "description",
+                                "text": "A virtual sensor that processes data derived from hardware sensors or other software sources",
+                                "children": []
+                            },
+                            {
+                                "id": "examples",
+                                "text": "Examples: Algorithms that estimate a person’s location from GPS and accelerometer data",
+                                "children": []
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                "id": "derived-sensors",
+                "text": "Derived Sensors",
+                "children": [
+                    {
+                        "id": "description",
+                        "text": "A type of virtual sensor whose data is calculated or inferred from other primary sensors",
+                        "children": []
+                    },
+                    {
+                        "id": "examples",
+                        "text": "Examples: GPS and Accelerometer-based Speed Sensor, Virtual Temperature Sensor",
+                        "children": []
+                    }
+                ]
+            }
+        ]
+    }
+}
