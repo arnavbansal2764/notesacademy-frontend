@@ -3,19 +3,30 @@
 import type React from "react"
 
 import { useState, useRef } from "react"
-import toast, { Toaster } from "react-hot-toast"
+import toast from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Loader } from "@/components/ui/loader"
-import { FileUp, CheckCircle2, Download, Share2, Palette } from "lucide-react"
+import {
+    FileUp,
+    CheckCircle2,
+    Download,
+    Share2,
+    Palette,
+    FileDown,
+    HelpCircle,
+    ChevronRight,
+    ChevronDown,
+} from "lucide-react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
 import { MindMap } from "@/components/mindmap/mindmap"
 import html2canvas from "html2canvas"
+import { jsPDF } from "jspdf"
 
 interface MindMapNode {
     id: string
@@ -47,6 +58,7 @@ export default function FlowchartGeneratorPage() {
     const [generatedVisualization, setGeneratedVisualization] = useState<boolean>(false)
     const [mindmapData, setMindmapData] = useState<MindMapData | null>(null)
     const [activeTheme, setActiveTheme] = useState<"blue" | "purple" | "green" | "orange">("blue")
+    const [expandedNodes, setExpandedNodes] = useState<{ [key: string]: boolean }>({})
 
     // Refs
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -194,30 +206,343 @@ export default function FlowchartGeneratorPage() {
         }
     }
 
-    const downloadVisualization = async () => {
-        if (!mindmapContainerRef.current) return
+    const expandAllForExport = () => {
+        // Store current expansion state
+        const currentExpandedState = { ...expandedNodes }
+
+        // Expand all nodes
+        const allExpanded: { [key: string]: boolean } = {}
+        const expandAll = (node: any) => {
+            if (!node) return
+            if (node.id) allExpanded[node.id] = true
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(expandAll)
+            }
+        }
+
+        if (mindmapData && mindmapData.root) {
+            expandAll(mindmapData.root)
+            // Update the state
+            setExpandedNodes(allExpanded)
+        }
+
+        // Return the stored state for restoration later
+        return currentExpandedState
+    }
+
+    // Direct canvas-based PDF generation without using html2canvas
+    const downloadAsPDF = async () => {
+        if (!mindmapData) return
+
+        const loadingToast = toast.loading("Preparing PDF download...")
 
         try {
-            toast.loading("Preparing download...")
+            // Store original state to restore later
+            const originalState = expandAllForExport()
+
+            // Wait for DOM to update after expanding nodes
+            await new Promise((resolve) => setTimeout(resolve, 1000))
+
+            // Get theme-specific color mappings using standard hex colors
+            const themeColors = {
+                blue: {
+                    primary: "#3b82f6",
+                    secondary: "#0891b2",
+                    accent: "#60a5fa",
+                    border: "#93c5fd",
+                    background: "#0f172a",
+                },
+                purple: {
+                    primary: "#8b5cf6",
+                    secondary: "#4f46e5",
+                    accent: "#a78bfa",
+                    border: "#c4b5fd",
+                    background: "#0f172a",
+                },
+                green: {
+                    primary: "#10b981",
+                    secondary: "#16a34a",
+                    accent: "#34d399",
+                    border: "#6ee7b7",
+                    background: "#0f172a",
+                },
+                orange: {
+                    primary: "#f97316",
+                    secondary: "#d97706",
+                    accent: "#fb923c",
+                    border: "#fdba74",
+                    background: "#0f172a",
+                },
+            }
+
+            const colors = themeColors[activeTheme]
+
+            // Create a canvas element
+            const canvas = document.createElement("canvas")
+            const ctx = canvas.getContext("2d")
+            if (!ctx) {
+                throw new Error("Could not get canvas context")
+            }
+
+            // Set canvas dimensions
+            const width = 1200
+            const height = 1600
+            canvas.width = width
+            canvas.height = height
+
+            // Fill background
+            ctx.fillStyle = colors.background
+            ctx.fillRect(0, 0, width, height)
+
+            // Add title
+            ctx.font = "bold 24px Arial"
+            ctx.fillStyle = "#ffffff"
+            ctx.fillText(mindmapData.root.text, 40, 40)
+
+            // Add subtitle
+            ctx.font = "14px Arial"
+            ctx.fillStyle = "#94a3b8"
+            ctx.fillText(`Generated on ${new Date().toLocaleDateString()}`, 40, 70)
+
+            // Draw mindmap
+            const nodeHeight = 40
+            const nodeSpacing = 20
+            const indentation = 40
+
+            // Calculate total height needed
+            const calculateTotalHeight = (node: MindMapNode, level = 0): number => {
+                if (!expandedNodes[node.id] && level > 0) {
+                    return nodeHeight
+                }
+
+                let height = nodeHeight
+                if (node.children && node.children.length > 0 && expandedNodes[node.id]) {
+                    height += node.children.reduce((sum, child) => sum + calculateTotalHeight(child, level + 1) + nodeSpacing, 0)
+                }
+                return height
+            }
+
+            const totalHeight = calculateTotalHeight(mindmapData.root)
+
+            // Draw nodes recursively
+            let currentY = 120
+
+            const drawNode = (node: MindMapNode, x: number, level = 0): number => {
+                const y = currentY
+                const nodeWidth = 300 - level * 10
+
+                // Draw node background
+                let gradient
+                if (level === 0) {
+                    gradient = ctx.createLinearGradient(x, y, x + nodeWidth, y)
+                    gradient.addColorStop(0, colors.primary)
+                    gradient.addColorStop(1, colors.secondary)
+                    ctx.fillStyle = gradient
+                } else {
+                    // Use semi-transparent colors for child nodes
+                    ctx.fillStyle = level === 1 ? hexToRgba(colors.primary, 0.2) : hexToRgba(colors.secondary, 0.15)
+                }
+
+                // Draw rounded rectangle
+                roundRect(ctx, x, y, nodeWidth, nodeHeight, 8, true)
+
+                // Draw border for non-root nodes
+                if (level > 0) {
+                    ctx.strokeStyle = hexToRgba(colors.border, 0.3)
+                    ctx.lineWidth = 1
+                    roundRect(ctx, x, y, nodeWidth, nodeHeight, 8, false, true)
+                }
+
+                // Draw node icon
+                let icon = "📄"
+                if (node.id.includes("_sub")) {
+                    icon = "📖"
+                } else if (node.id.includes("_p")) {
+                    icon = "💡"
+                } else if (node.style === "formula" || (node.text && node.text.includes("FORMULA:"))) {
+                    icon = "⚡"
+                }
+
+                ctx.font = "16px Arial"
+                ctx.fillText(icon, x + 10, y + 25)
+
+                // Draw node text
+                ctx.font = level === 0 ? "bold 16px Arial" : "16px Arial"
+                ctx.fillStyle = "#ffffff"
+                ctx.fillText(truncateText(node.text, ctx, nodeWidth - 50), x + 40, y + 25)
+
+                currentY += nodeHeight + nodeSpacing
+
+                // Draw children if expanded
+                if (node.children && node.children.length > 0 && expandedNodes[node.id]) {
+                    // Draw connection line
+                    const childX = x + indentation
+                    const lineStartX = x + 20
+                    const lineStartY = y + nodeHeight
+
+                    ctx.strokeStyle = hexToRgba(colors.border, 0.4)
+                    ctx.lineWidth = 1
+                    ctx.setLineDash([4, 4])
+                    ctx.beginPath()
+                    ctx.moveTo(lineStartX, lineStartY)
+                    ctx.lineTo(lineStartX, currentY - nodeSpacing)
+                    ctx.stroke()
+                    ctx.setLineDash([])
+
+                    // Draw children
+                    node.children.forEach((child) => {
+                        // Draw horizontal connector
+                        const connectorY = currentY + nodeHeight / 2
+                        ctx.strokeStyle = hexToRgba(colors.border, 0.4)
+                        ctx.beginPath()
+                        ctx.moveTo(lineStartX, connectorY)
+                        ctx.lineTo(childX, connectorY)
+                        ctx.stroke()
+
+                        drawNode(child, childX, level + 1)
+                    })
+                }
+
+                return currentY
+            }
+
+            // Helper function to draw rounded rectangles
+            function roundRect(
+                ctx: CanvasRenderingContext2D,
+                x: number,
+                y: number,
+                width: number,
+                height: number,
+                radius: number,
+                fill: boolean,
+                stroke = false,
+            ) {
+                ctx.beginPath()
+                ctx.moveTo(x + radius, y)
+                ctx.lineTo(x + width - radius, y)
+                ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
+                ctx.lineTo(x + width, y + height - radius)
+                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
+                ctx.lineTo(x + radius, y + height)
+                ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
+                ctx.lineTo(x, y + radius)
+                ctx.quadraticCurveTo(x, y, x + radius, y)
+                ctx.closePath()
+                if (fill) {
+                    ctx.fill()
+                }
+                if (stroke) {
+                    ctx.stroke()
+                }
+            }
+
+            // Helper function to convert hex to rgba
+            function hexToRgba(hex: string, alpha: number): string {
+                const r = Number.parseInt(hex.slice(1, 3), 16)
+                const g = Number.parseInt(hex.slice(3, 5), 16)
+                const b = Number.parseInt(hex.slice(5, 7), 16)
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`
+            }
+
+            // Helper function to truncate text
+            function truncateText(text: string, ctx: CanvasRenderingContext2D, maxWidth: number): string {
+                if (ctx.measureText(text).width <= maxWidth) {
+                    return text
+                }
+
+                let truncated = text
+                while (ctx.measureText(truncated + "...").width > maxWidth && truncated.length > 0) {
+                    truncated = truncated.slice(0, -1)
+                }
+
+                return truncated + "..."
+            }
+
+            // Draw the mindmap
+            drawNode(mindmapData.root, 40)
+
+            // Add legend at the bottom
+            const legendY = Math.max(currentY + 40, height - 100)
+            ctx.font = "14px Arial"
+            ctx.fillStyle = "#94a3b8"
+
+            ctx.fillText("📄 Topic", 40, legendY)
+            ctx.fillText("📖 Subtopic", 160, legendY)
+            ctx.fillText("💡 Point", 280, legendY)
+            ctx.fillText("⚡ Formula/Relation", 400, legendY)
+
+            // Add footer
+            ctx.font = "12px Arial"
+            ctx.fillStyle = "#64748b"
+            ctx.fillText("Created with Mindmap Generator", width / 2 - 80, height - 20)
+
+            // Convert canvas to image data
+            const imgData = canvas.toDataURL("image/png")
+
+            // Create PDF
+            const pdf = new jsPDF()
+
+            // Calculate dimensions to fit the image properly
+            const imgProps = pdf.getImageProperties(imgData)
+            const pdfWidth = pdf.internal.pageSize.getWidth()
+            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
+
+            // Add the image to the PDF
+            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight)
+
+            // Save the PDF
+            pdf.save(`mindmap-${new Date().toISOString().slice(0, 10)}.pdf`)
+
+            // Restore original expansion state
+            setTimeout(() => setExpandedNodes(originalState), 500)
+
+            toast.dismiss(loadingToast)
+            toast.success("Mindmap downloaded as PDF!")
+        } catch (error) {
+            console.error("Error generating PDF:", error)
+            toast.dismiss(loadingToast)
+            toast.error("Failed to generate PDF. Please try again.")
+        }
+    }
+
+    const downloadAsPNG = async () => {
+        if (!mindmapContainerRef.current) return
+
+        const loadingToast = toast.loading("Preparing PNG download...")
+
+        try {
+            // Store original state to restore later
+            const originalState = expandAllForExport()
+
+            // Wait for DOM to update after expanding nodes
+            await new Promise((resolve) => setTimeout(resolve, 1000))
 
             const element = mindmapContainerRef.current
+
+            // Use html2canvas directly - PNG format can handle modern colors better
             const canvas = await html2canvas(element, {
-                backgroundColor: "#0f172a", // Match the background color
-                scale: 2, // Higher quality
+                backgroundColor: "#0f172a",
+                scale: 2,
+                useCORS: true,
+                logging: false,
+                allowTaint: true,
             })
 
-            const dataUrl = canvas.toDataURL("image/png")
+            // Create download link
             const link = document.createElement("a")
             link.download = `mindmap-${new Date().toISOString().slice(0, 10)}.png`
-            link.href = dataUrl
+            link.href = canvas.toDataURL("image/png")
             link.click()
 
-            toast.dismiss()
-            toast.success("Visualization downloaded!")
+            // Restore original expansion state
+            setTimeout(() => setExpandedNodes(originalState), 500)
+
+            toast.dismiss(loadingToast)
+            toast.success("Mindmap downloaded as PNG!")
         } catch (error) {
-            console.error("Error downloading visualization:", error)
-            toast.dismiss()
-            toast.error("Failed to download visualization")
+            console.error("Error generating PNG:", error)
+            toast.dismiss(loadingToast)
+            toast.error("Failed to export PNG. Please try again.")
         }
     }
 
@@ -231,10 +556,6 @@ export default function FlowchartGeneratorPage() {
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
             <Navbar />
-
-            {/* React Hot Toast */}
-            <Toaster position="top-right" />
-
             <main className="container mx-auto px-4 py-16">
                 <div className="max-w-5xl mx-auto">
                     <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
@@ -392,14 +713,13 @@ export default function FlowchartGeneratorPage() {
                                                     </CardDescription>
                                                 </div>
                                                 <div className="flex space-x-2">
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="flex items-center"
-                                                        onClick={downloadVisualization}
-                                                    >
+                                                    <Button size="sm" variant="outline" className="flex items-center" onClick={downloadAsPDF}>
                                                         <Download className="h-4 w-4 mr-1" />
-                                                        <span>Export</span>
+                                                        <span>Export PDF</span>
+                                                    </Button>
+                                                    <Button size="sm" variant="outline" className="flex items-center" onClick={downloadAsPNG}>
+                                                        <FileDown className="h-4 w-4 mr-1" />
+                                                        <span>Export PNG</span>
                                                     </Button>
                                                     <Button size="sm" variant="outline" className="flex items-center">
                                                         <Share2 className="h-4 w-4 mr-1" />
@@ -429,6 +749,45 @@ export default function FlowchartGeneratorPage() {
                                             </div>
                                         </CardHeader>
                                         <CardContent>
+                                            {/* User Guide */}
+                                            <div className="mb-6 p-4 bg-slate-700/30 rounded-lg border border-slate-600">
+                                                <div className="flex items-start space-x-4">
+                                                    <div className="bg-indigo-500 rounded-full p-2">
+                                                        <HelpCircle className="h-5 w-5" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="font-medium text-lg mb-2">How to Use Your Mindmap</h3>
+                                                        <ul className="space-y-2 text-sm text-gray-300">
+                                                            <li className="flex items-center">
+                                                                <ChevronRight className="h-4 w-4 mr-2 text-indigo-400" />
+                                                                <span>
+                                                                    <strong>Expand/Collapse:</strong> Click on any node with a chevron to expand or
+                                                                    collapse its children
+                                                                </span>
+                                                            </li>
+                                                            <li className="flex items-center">
+                                                                <ChevronDown className="h-4 w-4 mr-2 text-indigo-400" />
+                                                                <span>
+                                                                    <strong>Expand All:</strong> Use the "Expand All" button to see the complete mindmap
+                                                                </span>
+                                                            </li>
+                                                            <li className="flex items-center">
+                                                                <Palette className="h-4 w-4 mr-2 text-indigo-400" />
+                                                                <span>
+                                                                    <strong>Change Theme:</strong> Click the theme button to cycle through color options
+                                                                </span>
+                                                            </li>
+                                                            <li className="flex items-center">
+                                                                <Download className="h-4 w-4 mr-2 text-indigo-400" />
+                                                                <span>
+                                                                    <strong>Export:</strong> Download your mindmap as PNG or PDF for sharing or printing
+                                                                </span>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                             <div ref={mindmapContainerRef}>
                                                 <MindMap data={mindmapData} theme={activeTheme} expanded={false} />
                                             </div>

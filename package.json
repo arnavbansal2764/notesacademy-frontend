@@ -19,8 +19,10 @@
     "canvas-confetti": "^1.9.3",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "elkjs": "^0.10.0",
     "framer-motion": "^12.5.0",
     "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
     "lucide-react": "^0.483.0",
     "mermaid": "^11.6.0",
     "next": "15.2.3",
@@ -29,6 +31,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-hot-toast": "^2.5.2",
+    "reaflow": "^5.3.4",
     "tailwind-merge": "^3.0.2",
     "tw-animate-css": "^1.2.4"
   },

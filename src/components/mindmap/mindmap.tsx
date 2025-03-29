@@ -2,7 +2,17 @@
 
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import { ChevronRight, ChevronDown, FileText, BookOpen, Lightbulb, Zap, ActivityIcon as Function } from "lucide-react"
+import {
+    ChevronRight,
+    ChevronDown,
+    FileText,
+    BookOpen,
+    Lightbulb,
+    Zap,
+    ActivityIcon as Function,
+    ChevronUp,
+} from "lucide-react"
+import { InfoIcon } from "lucide-react"
 
 interface MindMapNode {
     id: string
@@ -27,6 +37,7 @@ interface MindMapProps {
 
 export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps) {
     const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({})
+    const [hoveredNode, setHoveredNode] = useState<string | null>(null)
     const containerRef = useRef<HTMLDivElement>(null)
 
     // Initialize with root node expanded and optionally all nodes expanded
@@ -63,6 +74,7 @@ export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps
                     secondary: "bg-purple-500/10 border-purple-500/30",
                     accent: "text-purple-400",
                     connection: "bg-purple-500/30",
+                    hover: "hover:bg-purple-500/20",
                 }
             case "green":
                 return {
@@ -70,6 +82,7 @@ export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps
                     secondary: "bg-emerald-500/10 border-emerald-500/30",
                     accent: "text-emerald-400",
                     connection: "bg-emerald-500/30",
+                    hover: "hover:bg-emerald-500/20",
                 }
             case "orange":
                 return {
@@ -77,6 +90,7 @@ export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps
                     secondary: "bg-orange-500/10 border-orange-500/30",
                     accent: "text-orange-400",
                     connection: "bg-orange-500/30",
+                    hover: "hover:bg-orange-500/20",
                 }
             default: // blue
                 return {
@@ -84,6 +98,7 @@ export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps
                     secondary: "bg-blue-500/10 border-blue-500/30",
                     accent: "text-blue-400",
                     connection: "bg-blue-500/30",
+                    hover: "hover:bg-blue-500/20",
                 }
         }
     }
@@ -119,15 +134,21 @@ export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps
     const renderNode = (node: MindMapNode, level = 0, isLast = false) => {
         const isExpanded = expandedNodes[node.id] || false
         const hasChildren = node.children && node.children.length > 0
+        const isHovered = hoveredNode === node.id
 
         // Determine node style based on level and type
         let nodeStyle = ""
         if (level === 0) {
             nodeStyle = `bg-gradient-to-r ${colors.primary} text-white font-bold py-3 px-4 rounded-lg`
         } else if (node.style === "formula") {
-            nodeStyle = `${colors.secondary} border text-white font-mono py-2 px-3 rounded-md`
+            nodeStyle = `${colors.secondary} border text-white font-mono py-2 px-3 rounded-md ${colors.hover} transition-colors duration-200`
         } else {
-            nodeStyle = `${colors.secondary} border py-2 px-3 rounded-md`
+            nodeStyle = `${colors.secondary} border py-2 px-3 rounded-md ${colors.hover} transition-colors duration-200`
+        }
+
+        // Add highlight effect when hovered
+        if (isHovered && level > 0) {
+            nodeStyle += " ring-2 ring-white/50"
         }
 
         return (
@@ -138,11 +159,13 @@ export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.3, delay: level * 0.05 }}
                 className="relative"
+                onMouseEnter={() => setHoveredNode(node.id)}
+                onMouseLeave={() => setHoveredNode(null)}
             >
                 {/* Connection line to parent (except for root) */}
                 {level > 0 && (
                     <div
-                        className={`absolute top-1/2 -left-4 w-4 h-px ${colors.connection}`}
+                        className={`absolute top-1/2 -left-4 w-4 h-px ${colors.connection} transition-all duration-200 ${isHovered ? "h-[3px] opacity-100" : "opacity-70"}`}
                         style={{ transform: "translateY(-50%)" }}
                     />
                 )}
@@ -160,17 +183,24 @@ export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps
                                     initial={{ rotate: 0 }}
                                     animate={{ rotate: isExpanded ? 90 : 0 }}
                                     transition={{ duration: 0.2 }}
-                                    className="mr-2 flex-shrink-0"
+                                    className={`mr-2 flex-shrink-0 ${colors.accent}`}
                                 >
                                     <ChevronRight className="h-4 w-4" />
                                 </motion.div>
                             )}
 
                             {/* Node icon */}
-                            {getNodeIcon(node)}
+                            <span className={colors.accent}>{getNodeIcon(node)}</span>
 
                             {/* Node text */}
                             <span className={node.style === "formula" ? "font-mono" : ""}>{node.text}</span>
+
+                            {/* Child count indicator */}
+                            {hasChildren && !isExpanded && (
+                                <span className="ml-2 text-xs px-1.5 py-0.5 rounded-full bg-slate-700 text-slate-300">
+                                    {node.children.length}
+                                </span>
+                            )}
                         </div>
                     </div>
 
@@ -198,8 +228,18 @@ export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps
     }
 
     return (
-        <div ref={containerRef} className="p-4 overflow-auto max-h-[70vh] bg-slate-900 rounded-lg">
-            <div className="flex justify-end mb-4">
+        <div
+            ref={containerRef}
+            className="p-4 overflow-auto max-h-[70vh] bg-slate-900 rounded-lg"
+            id="mindmap-container-for-export" // Add this ID for better targeting
+        >
+            <div className="flex justify-between mb-4">
+                <div className="text-sm text-gray-400">
+                    <span className="flex items-center">
+                        <InfoIcon className="h-4 w-4 mr-1" />
+                        Click on nodes with <ChevronRight className="h-3 w-3 mx-1" /> to expand/collapse
+                    </span>
+                </div>
                 <button
                     onClick={() => {
                         // Toggle between expanding all and collapsing to just root
@@ -234,10 +274,45 @@ export function MindMap({ data, theme = "blue", expanded = false }: MindMapProps
             </div>
 
             {renderNode(data.root)}
+
+            <div className="mt-6 pt-4 border-t border-slate-700">
+                <div className="flex justify-between items-center text-xs text-slate-500">
+                    <div className="flex items-center space-x-4">
+                        <div className="flex items-center">
+                            <FileText className="h-3 w-3 mr-1" />
+                            <span>Topic</span>
+                        </div>
+                        <div className="flex items-center">
+                            <BookOpen className="h-3 w-3 mr-1" />
+                            <span>Subtopic</span>
+                        </div>
+                        <div className="flex items-center">
+                            <Lightbulb className="h-3 w-3 mr-1" />
+                            <span>Point</span>
+                        </div>
+                        <div className="flex items-center">
+                            <Function className="h-3 w-3 mr-1" />
+                            <span>Formula</span>
+                        </div>
+                    </div>
+                    <div>
+                        <span>Total nodes: {countNodes(data.root)}</span>
+                    </div>
+                </div>
+            </div>
         </div>
     )
 }
 
-// Missing ChevronUp import
-import { ChevronUp } from "lucide-react"
+// Helper function to count total nodes in the mindmap
+function countNodes(node: MindMapNode): number {
+    let count = 1 // Count the node itself
+
+    if (node.children && node.children.length > 0) {
+        // Add the count of all children
+        count += node.children.reduce((sum, child) => sum + countNodes(child), 0)
+    }
+
+    return count
+}
 
