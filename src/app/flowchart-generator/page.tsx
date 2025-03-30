@@ -6,26 +6,14 @@ import { useState, useRef } from "react"
 import toast from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { Loader } from "@/components/ui/loader"
-import {
-    FileUp,
-    CheckCircle2,
-    Download,
-    Share2,
-    Palette,
-    FileDown,
-    HelpCircle,
-    ChevronRight,
-    ChevronDown,
-} from "lucide-react"
+import { AIVisualizationLoader } from "@/components/ui/ai-visualization-loader"
+import { FileUp, CheckCircle2, Download, HelpCircle, ChevronRight, ChevronDown } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
 import { MindMap } from "@/components/mindmap/mindmap"
-import html2canvas from "html2canvas"
 import { jsPDF } from "jspdf"
 
 interface MindMapNode {
@@ -57,8 +45,10 @@ export default function FlowchartGeneratorPage() {
     // Visualization states
     const [generatedVisualization, setGeneratedVisualization] = useState<boolean>(false)
     const [mindmapData, setMindmapData] = useState<MindMapData | null>(null)
-    const [activeTheme, setActiveTheme] = useState<"blue" | "purple" | "green" | "orange">("blue")
     const [expandedNodes, setExpandedNodes] = useState<{ [key: string]: boolean }>({})
+
+    // Fixed theme to blue
+    const activeTheme = "blue"
 
     // Refs
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -88,8 +78,6 @@ export default function FlowchartGeneratorPage() {
         setUploadStatus("uploading")
         setUploadProgress(0)
 
-        const uploadToastId = toast.loading("Uploading your PDF...")
-
         try {
             const uploadResult = await uploadToS3(file, (progress) => {
                 setUploadProgress(progress)
@@ -102,17 +90,12 @@ export default function FlowchartGeneratorPage() {
             setS3Url(uploadResult.url)
             setUploadStatus("success")
             setIsUploading(false)
-
-            toast.success("PDF uploaded successfully", {
-                id: uploadToastId,
-            })
+            toast.success("PDF uploaded successfully")
         } catch (error) {
             console.error("Error uploading file:", error)
-            toast.error("Failed to upload file", {
-                id: uploadToastId,
-            })
             setUploadStatus("error")
             setIsUploading(false)
+            toast.error("Failed to upload file")
         }
     }
 
@@ -120,7 +103,6 @@ export default function FlowchartGeneratorPage() {
         if (!s3Url) return
 
         setIsGenerating(true)
-        const generatingToastId = toast.loading("Generating your visualization...")
 
         try {
             const response = await fetch("/api/generate-mindmap", {
@@ -142,7 +124,6 @@ export default function FlowchartGeneratorPage() {
             const data = await response.json()
 
             // For demonstration, we'll use sample data if the response doesn't match our expected format
-            // In a real implementation, you would adapt this to handle the actual API response format
             if (data.root) {
                 setMindmapData(data)
             } else {
@@ -193,14 +174,13 @@ export default function FlowchartGeneratorPage() {
             setGeneratedVisualization(true)
             setActiveTab("generated")
 
-            toast.success("Visualization generated successfully!", {
-                id: generatingToastId,
-            })
+            // Success toast only after loader is dismissed
+            setTimeout(() => {
+                toast.success("Visualization generated successfully!")
+            }, 300)
         } catch (error) {
             console.error("Error generating visualization:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to generate visualization", {
-                id: generatingToastId,
-            })
+            toast.error(error instanceof Error ? error.message : "Failed to generate visualization")
         } finally {
             setIsGenerating(false)
         }
@@ -230,7 +210,7 @@ export default function FlowchartGeneratorPage() {
         return currentExpandedState
     }
 
-    // Direct canvas-based PDF generation without using html2canvas
+    // Enhanced PDF generation with beautiful design and clear organization
     const downloadAsPDF = async () => {
         if (!mindmapData) return
 
@@ -243,252 +223,274 @@ export default function FlowchartGeneratorPage() {
             // Wait for DOM to update after expanding nodes
             await new Promise((resolve) => setTimeout(resolve, 1000))
 
-            // Get theme-specific color mappings using standard hex colors
-            const themeColors = {
-                blue: {
-                    primary: "#3b82f6",
-                    secondary: "#0891b2",
-                    accent: "#60a5fa",
-                    border: "#93c5fd",
-                    background: "#0f172a",
-                },
-                purple: {
-                    primary: "#8b5cf6",
-                    secondary: "#4f46e5",
-                    accent: "#a78bfa",
-                    border: "#c4b5fd",
-                    background: "#0f172a",
-                },
-                green: {
-                    primary: "#10b981",
-                    secondary: "#16a34a",
-                    accent: "#34d399",
-                    border: "#6ee7b7",
-                    background: "#0f172a",
-                },
-                orange: {
-                    primary: "#f97316",
-                    secondary: "#d97706",
-                    accent: "#fb923c",
-                    border: "#fdba74",
-                    background: "#0f172a",
-                },
+            // Blue theme colors
+            const colors = {
+                primary: "#3b82f6",
+                secondary: "#0891b2",
+                accent: "#60a5fa",
+                border: "#93c5fd",
+                background: "#0f172a",
+                mainTopic: "#4169e1",
+                subTopic: "#38bdf8",
+                formula: "#2563eb",
+                connector: "#93c5fd",
             }
 
-            const colors = themeColors[activeTheme]
+            // Create PDF document
+            const pdf = new jsPDF({
+                orientation: "portrait",
+                unit: "mm",
+                format: "a4",
+            })
 
-            // Create a canvas element
-            const canvas = document.createElement("canvas")
-            const ctx = canvas.getContext("2d")
-            if (!ctx) {
-                throw new Error("Could not get canvas context")
+            // PDF dimensions
+            const pageWidth = pdf.internal.pageSize.getWidth()
+            const pageHeight = pdf.internal.pageSize.getHeight()
+            const margin = 15
+            const contentWidth = pageWidth - margin * 2
+
+            // Prepare for multi-column layout
+            const columnCount = 2
+            const columnWidth = (contentWidth - 10) / columnCount // 10mm gap between columns
+
+            // Node styling
+            const nodeHeight = 10
+            const nodeSpacing = 8
+            const indentation = 12
+
+            // Clean up node text by removing strange characters
+            const cleanNodeText = (text: string) => {
+                return text
+                    .replace(/ø=ÜÅ|ø=ÜÖ|ø=ÜA|ø=0A|ø=0Ö|ø=0O|ø=ÜO|ø=ÜC|ø=0C|ø=ÜD|ø=0D/g, "")
+                    .replace(/FORMULA:/i, "")
+                    .trim()
             }
 
-            // Set canvas dimensions
-            const width = 1200
-            const height = 1600
-            canvas.width = width
-            canvas.height = height
+            // Format formula text
+            const formatFormula = (formula: string) => {
+                return formula
+                    .replace(/\*/g, "×")
+                    .replace(/\//g, "÷")
+                    .replace(/\^2/g, "²")
+                    .replace(/\^3/g, "³")
+                    .replace(/sqrt/g, "√")
+                    .replace(/pi/g, "π")
+                    .replace(/theta/g, "θ")
+                    .replace(/delta/g, "δ")
+                    .replace(/\(/g, "(")
+                    .replace(/\)/g, ")")
+                    .replace(/\+/g, "+")
+                    .replace(/-/g, "-")
+                    .replace(/_/g, "_")
+            }
 
-            // Fill background
-            ctx.fillStyle = colors.background
-            ctx.fillRect(0, 0, width, height)
+            // Organize nodes by main topics for better layout
+            const processedNodes: {
+                id: string
+                text: string
+                level: number
+                isFormula: boolean
+                parent: string | null
+                x: number
+                y: number
+                width: number
+                height: number
+                column: number
+                page: number
+            }[] = []
 
-            // Add title
-            ctx.font = "bold 24px Arial"
-            ctx.fillStyle = "#ffffff"
-            ctx.fillText(mindmapData.root.text, 40, 40)
+            // Process all nodes to prepare for layout
+            const processNode = (node: MindMapNode, level: number, parent: string | null = null) => {
+                const isFormula =
+                    node.text.includes("FORMULA:") ||
+                    node.style === "formula" ||
+                    node.text.includes("F =") ||
+                    node.text.includes("g =") ||
+                    node.text.includes("PE =") ||
+                    node.text.includes("W =")
 
-            // Add subtitle
-            ctx.font = "14px Arial"
-            ctx.fillStyle = "#94a3b8"
-            ctx.fillText(`Generated on ${new Date().toLocaleDateString()}`, 40, 70)
+                processedNodes.push({
+                    id: node.id,
+                    text: cleanNodeText(node.text),
+                    level,
+                    isFormula,
+                    parent,
+                    x: 0,
+                    y: 0,
+                    width: 0,
+                    height: nodeHeight,
+                    column: 0,
+                    page: 0,
+                })
 
-            // Draw mindmap
-            const nodeHeight = 40
-            const nodeSpacing = 20
-            const indentation = 40
-
-            // Calculate total height needed
-            const calculateTotalHeight = (node: MindMapNode, level = 0): number => {
-                if (!expandedNodes[node.id] && level > 0) {
-                    return nodeHeight
-                }
-
-                let height = nodeHeight
                 if (node.children && node.children.length > 0 && expandedNodes[node.id]) {
-                    height += node.children.reduce((sum, child) => sum + calculateTotalHeight(child, level + 1) + nodeSpacing, 0)
+                    node.children.forEach((child) => processNode(child, level + 1, node.id))
                 }
-                return height
             }
 
-            const totalHeight = calculateTotalHeight(mindmapData.root)
+            // Start processing from root
+            if (mindmapData.root.children && mindmapData.root.children.length > 0) {
+                mindmapData.root.children.forEach((mainTopic) => {
+                    processNode(mainTopic, 0)
+                })
+            }
 
-            // Draw nodes recursively
-            let currentY = 120
+            // Organize nodes into columns and pages
+            const nodesPerColumn = Math.ceil(processedNodes.length / 6) // Adjust based on your content
+            const nodesPerPage = nodesPerColumn * columnCount
+            const pagesNeeded = Math.ceil(processedNodes.length / nodesPerPage)
 
-            const drawNode = (node: MindMapNode, x: number, level = 0): number => {
-                const y = currentY
-                const nodeWidth = 300 - level * 10
+            // Assign column and page to each node
+            processedNodes.forEach((node, index) => {
+                const page = Math.floor(index / nodesPerPage)
+                const pageIndex = index % nodesPerPage
+                const column = Math.floor(pageIndex / nodesPerColumn)
+
+                node.page = page
+                node.column = column
+            })
+
+            // Calculate positions for each node
+            const calculatePositions = () => {
+                // Group nodes by page and column
+                const pageColumns: Record<number, Record<number, typeof processedNodes>> = {}
+
+                processedNodes.forEach((node) => {
+                    if (!pageColumns[node.page]) {
+                        pageColumns[node.page] = {}
+                    }
+
+                    if (!pageColumns[node.page][node.column]) {
+                        pageColumns[node.page][node.column] = []
+                    }
+
+                    pageColumns[node.page][node.column].push(node)
+                })
+
+                // Calculate positions for each node in each column
+                Object.keys(pageColumns).forEach((pageKey) => {
+                    const page = Number(pageKey)
+
+                    Object.keys(pageColumns[page]).forEach((columnKey) => {
+                        const column = Number(columnKey)
+                        const nodes = pageColumns[page][column]
+
+                        let currentY = 35 // Start position after header
+
+                        nodes.forEach((node) => {
+                            const x = margin + column * (columnWidth + 10) + node.level * indentation
+                            const width = columnWidth - node.level * indentation
+
+                            node.x = x
+                            node.y = currentY
+                            node.width = width
+
+                            currentY += nodeHeight + nodeSpacing
+                        })
+                    })
+                })
+            }
+
+            calculatePositions()
+
+            // Draw a node
+            const drawNode = (node: (typeof processedNodes)[0], pdf: jsPDF) => {
+                // Determine node style based on level and content
+                let fillColor
+                const textColor = "#ffffff"
+
+                if (node.level === 0) {
+                    // Main topic
+                    fillColor = colors.mainTopic
+                } else if (node.isFormula) {
+                    // Formula nodes
+                    fillColor = colors.formula
+                } else {
+                    // Subtopics
+                    fillColor = colors.subTopic
+                }
 
                 // Draw node background
-                let gradient
-                if (level === 0) {
-                    gradient = ctx.createLinearGradient(x, y, x + nodeWidth, y)
-                    gradient.addColorStop(0, colors.primary)
-                    gradient.addColorStop(1, colors.secondary)
-                    ctx.fillStyle = gradient
-                } else {
-                    // Use semi-transparent colors for child nodes
-                    ctx.fillStyle = level === 1 ? hexToRgba(colors.primary, 0.2) : hexToRgba(colors.secondary, 0.15)
+                pdf.setFillColor(fillColor)
+                pdf.rect(node.x, node.y, node.width, node.height, "F")
+
+                // Set text style
+                pdf.setTextColor(textColor)
+                pdf.setFont(node.level === 0 ? "helvetica-bold" : "helvetica", node.level === 0 ? "bold" : "normal")
+                pdf.setFontSize(node.level === 0 ? 10 : 9)
+
+                // Prepare text
+                let displayText = node.text
+                if (node.isFormula) {
+                    displayText = formatFormula(displayText)
                 }
 
-                // Draw rounded rectangle
-                roundRect(ctx, x, y, nodeWidth, nodeHeight, 8, true)
+                // Calculate text width to check for overflow
+                const textWidth = (pdf.getStringUnitWidth(displayText) * pdf.getFontSize()) / pdf.internal.scaleFactor
 
-                // Draw border for non-root nodes
-                if (level > 0) {
-                    ctx.strokeStyle = hexToRgba(colors.border, 0.3)
-                    ctx.lineWidth = 1
-                    roundRect(ctx, x, y, nodeWidth, nodeHeight, 8, false, true)
+                // Truncate text if needed
+                if (textWidth > node.width - 6) {
+                    let truncated = displayText
+                    while (
+                        (pdf.getStringUnitWidth(truncated + "...") * pdf.getFontSize()) / pdf.internal.scaleFactor >
+                        node.width - 6 &&
+                        truncated.length > 0
+                    ) {
+                        truncated = truncated.slice(0, -1)
+                    }
+                    displayText = truncated + "..."
                 }
 
-                // Draw node icon
-                let icon = "📄"
-                if (node.id.includes("_sub")) {
-                    icon = "📖"
-                } else if (node.id.includes("_p")) {
-                    icon = "💡"
-                } else if (node.style === "formula" || (node.text && node.text.includes("FORMULA:"))) {
-                    icon = "⚡"
-                }
-
-                ctx.font = "16px Arial"
-                ctx.fillText(icon, x + 10, y + 25)
-
-                // Draw node text
-                ctx.font = level === 0 ? "bold 16px Arial" : "16px Arial"
-                ctx.fillStyle = "#ffffff"
-                ctx.fillText(truncateText(node.text, ctx, nodeWidth - 50), x + 40, y + 25)
-
-                currentY += nodeHeight + nodeSpacing
-
-                // Draw children if expanded
-                if (node.children && node.children.length > 0 && expandedNodes[node.id]) {
-                    // Draw connection line
-                    const childX = x + indentation
-                    const lineStartX = x + 20
-                    const lineStartY = y + nodeHeight
-
-                    ctx.strokeStyle = hexToRgba(colors.border, 0.4)
-                    ctx.lineWidth = 1
-                    ctx.setLineDash([4, 4])
-                    ctx.beginPath()
-                    ctx.moveTo(lineStartX, lineStartY)
-                    ctx.lineTo(lineStartX, currentY - nodeSpacing)
-                    ctx.stroke()
-                    ctx.setLineDash([])
-
-                    // Draw children
-                    node.children.forEach((child) => {
-                        // Draw horizontal connector
-                        const connectorY = currentY + nodeHeight / 2
-                        ctx.strokeStyle = hexToRgba(colors.border, 0.4)
-                        ctx.beginPath()
-                        ctx.moveTo(lineStartX, connectorY)
-                        ctx.lineTo(childX, connectorY)
-                        ctx.stroke()
-
-                        drawNode(child, childX, level + 1)
-                    })
-                }
-
-                return currentY
+                // Draw text centered vertically in the node
+                pdf.text(displayText, node.x + 3, node.y + node.height / 2 + 1, { baseline: "middle" })
             }
 
-            // Helper function to draw rounded rectangles
-            function roundRect(
-                ctx: CanvasRenderingContext2D,
-                x: number,
-                y: number,
-                width: number,
-                height: number,
-                radius: number,
-                fill: boolean,
-                stroke = false,
-            ) {
-                ctx.beginPath()
-                ctx.moveTo(x + radius, y)
-                ctx.lineTo(x + width - radius, y)
-                ctx.quadraticCurveTo(x + width, y, x + width, y + radius)
-                ctx.lineTo(x + width, y + height - radius)
-                ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height)
-                ctx.lineTo(x + radius, y + height)
-                ctx.quadraticCurveTo(x, y + height, x, y + height - radius)
-                ctx.lineTo(x, y + radius)
-                ctx.quadraticCurveTo(x, y, x + radius, y)
-                ctx.closePath()
-                if (fill) {
-                    ctx.fill()
+            // Draw a page
+            const drawPage = (pageIndex: number, pdf: jsPDF) => {
+                // Add new page if not the first page
+                if (pageIndex > 0) {
+                    pdf.addPage()
                 }
-                if (stroke) {
-                    ctx.stroke()
-                }
+
+                // Fill background
+                pdf.setFillColor(colors.background)
+                pdf.rect(0, 0, pageWidth, pageHeight, "F")
+
+                // Draw header
+                pdf.setFillColor("#1e3a8a")
+                pdf.rect(0, 0, pageWidth, 25, "F")
+
+                // Add title
+                pdf.setFont("helvetica", "bold")
+                pdf.setFontSize(16)
+                pdf.setTextColor(255, 255, 255)
+                pdf.text(mindmapData!.root.text, margin, 15)
+
+                // Add subtitle
+                pdf.setFont("helvetica", "normal")
+                pdf.setFontSize(9)
+                pdf.setTextColor(200, 200, 200)
+                pdf.text(
+                    `Generated on ${new Date().toLocaleDateString()} - Page ${pageIndex + 1} of ${pagesNeeded}`,
+                    margin,
+                    22,
+                )
+
+                // Draw nodes for this page
+                const pageNodes = processedNodes.filter((node) => node.page === pageIndex)
+                pageNodes.forEach((node) => drawNode(node, pdf))
+
+                // Draw footer
+                pdf.setFont("helvetica", "normal")
+                pdf.setFontSize(8)
+                pdf.setTextColor(150, 150, 150)
+                pdf.text("Created with Mindmap Generator", pageWidth / 2, pageHeight - 10, { align: "center" })
             }
 
-            // Helper function to convert hex to rgba
-            function hexToRgba(hex: string, alpha: number): string {
-                const r = Number.parseInt(hex.slice(1, 3), 16)
-                const g = Number.parseInt(hex.slice(3, 5), 16)
-                const b = Number.parseInt(hex.slice(5, 7), 16)
-                return `rgba(${r}, ${g}, ${b}, ${alpha})`
+            // Draw all pages
+            for (let i = 0; i < pagesNeeded; i++) {
+                drawPage(i, pdf)
             }
-
-            // Helper function to truncate text
-            function truncateText(text: string, ctx: CanvasRenderingContext2D, maxWidth: number): string {
-                if (ctx.measureText(text).width <= maxWidth) {
-                    return text
-                }
-
-                let truncated = text
-                while (ctx.measureText(truncated + "...").width > maxWidth && truncated.length > 0) {
-                    truncated = truncated.slice(0, -1)
-                }
-
-                return truncated + "..."
-            }
-
-            // Draw the mindmap
-            drawNode(mindmapData.root, 40)
-
-            // Add legend at the bottom
-            const legendY = Math.max(currentY + 40, height - 100)
-            ctx.font = "14px Arial"
-            ctx.fillStyle = "#94a3b8"
-
-            ctx.fillText("📄 Topic", 40, legendY)
-            ctx.fillText("📖 Subtopic", 160, legendY)
-            ctx.fillText("💡 Point", 280, legendY)
-            ctx.fillText("⚡ Formula/Relation", 400, legendY)
-
-            // Add footer
-            ctx.font = "12px Arial"
-            ctx.fillStyle = "#64748b"
-            ctx.fillText("Created with Mindmap Generator", width / 2 - 80, height - 20)
-
-            // Convert canvas to image data
-            const imgData = canvas.toDataURL("image/png")
-
-            // Create PDF
-            const pdf = new jsPDF()
-
-            // Calculate dimensions to fit the image properly
-            const imgProps = pdf.getImageProperties(imgData)
-            const pdfWidth = pdf.internal.pageSize.getWidth()
-            const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width
-
-            // Add the image to the PDF
-            pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight)
 
             // Save the PDF
             pdf.save(`mindmap-${new Date().toISOString().slice(0, 10)}.pdf`)
@@ -505,60 +507,23 @@ export default function FlowchartGeneratorPage() {
         }
     }
 
-    const downloadAsPNG = async () => {
-        if (!mindmapContainerRef.current) return
-
-        const loadingToast = toast.loading("Preparing PNG download...")
-
-        try {
-            // Store original state to restore later
-            const originalState = expandAllForExport()
-
-            // Wait for DOM to update after expanding nodes
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-
-            const element = mindmapContainerRef.current
-
-            // Use html2canvas directly - PNG format can handle modern colors better
-            const canvas = await html2canvas(element, {
-                backgroundColor: "#0f172a",
-                scale: 2,
-                useCORS: true,
-                logging: false,
-                allowTaint: true,
-            })
-
-            // Create download link
-            const link = document.createElement("a")
-            link.download = `mindmap-${new Date().toISOString().slice(0, 10)}.png`
-            link.href = canvas.toDataURL("image/png")
-            link.click()
-
-            // Restore original expansion state
-            setTimeout(() => setExpandedNodes(originalState), 500)
-
-            toast.dismiss(loadingToast)
-            toast.success("Mindmap downloaded as PNG!")
-        } catch (error) {
-            console.error("Error generating PNG:", error)
-            toast.dismiss(loadingToast)
-            toast.error("Failed to export PNG. Please try again.")
-        }
-    }
-
-    const colorThemes = [
-        { id: "blue", name: "Ocean Blue", primary: "bg-blue-500", secondary: "bg-cyan-400" },
-        { id: "purple", name: "Royal Purple", primary: "bg-purple-500", secondary: "bg-indigo-400" },
-        { id: "green", name: "Forest Green", primary: "bg-emerald-500", secondary: "bg-green-400" },
-        { id: "orange", name: "Sunset Orange", primary: "bg-orange-500", secondary: "bg-amber-400" },
-    ]
-
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
             <Navbar />
+
+            {/* AI Visualization Loaders */}
+            <AIVisualizationLoader isLoading={isUploading} message="Uploading your PDF" variant="upload" theme="blue" />
+
+            <AIVisualizationLoader
+                isLoading={isGenerating}
+                message="AI is processing your data"
+                variant="wave"
+                theme="blue"
+            />
+
             <main className="container mx-auto px-4 py-16">
                 <div className="max-w-5xl mx-auto">
-                    <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+                    <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent">
                         Mindmap & Concept Map Generator
                     </h1>
                     <p className="text-gray-300 mb-8">
@@ -605,14 +570,14 @@ export default function FlowchartGeneratorPage() {
                                         {file && (
                                             <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
                                                 <div className="flex items-center">
-                                                    <FileUp className="h-5 w-5 mr-2 text-purple-400" />
+                                                    <FileUp className="h-5 w-5 mr-2 text-blue-400" />
                                                     <span className="text-sm truncate max-w-[200px]">{file.name}</span>
                                                 </div>
                                                 {uploadStatus === "success" && <CheckCircle2 className="h-5 w-5 text-green-500" />}
                                             </div>
                                         )}
 
-                                        {uploadStatus === "uploading" && (
+                                        {uploadStatus === "uploading" && !isUploading && (
                                             <div className="space-y-2">
                                                 <div className="flex justify-between text-sm">
                                                     <span>Uploading...</span>
@@ -621,50 +586,6 @@ export default function FlowchartGeneratorPage() {
                                                 <Progress value={uploadProgress} className="h-2" />
                                             </div>
                                         )}
-
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="detail-level">Detail Level</Label>
-                                                <select id="detail-level" className="w-full rounded-md bg-slate-700 border-slate-600 p-2">
-                                                    <option value="simple">Simple Overview</option>
-                                                    <option value="moderate" selected>
-                                                        Moderate Detail
-                                                    </option>
-                                                    <option value="detailed">Comprehensive Detail</option>
-                                                </select>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <Label htmlFor="initial-state">Initial State</Label>
-                                                <select id="initial-state" className="w-full rounded-md bg-slate-700 border-slate-600 p-2">
-                                                    <option value="collapsed">Collapsed (Root Only)</option>
-                                                    <option value="partial" selected>
-                                                        Partially Expanded
-                                                    </option>
-                                                    <option value="expanded">Fully Expanded</option>
-                                                </select>
-                                            </div>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label>Color Theme</Label>
-                                            <div className="flex flex-wrap gap-3">
-                                                {colorThemes.map((theme) => (
-                                                    <button
-                                                        key={theme.id}
-                                                        onClick={() => setActiveTheme(theme.id as any)}
-                                                        className={`flex items-center space-x-2 p-2 rounded-md transition-all ${activeTheme === theme.id ? "ring-2 ring-white" : ""
-                                                            }`}
-                                                    >
-                                                        <div className="flex">
-                                                            <div className={`w-6 h-6 rounded-l-md ${theme.primary}`}></div>
-                                                            <div className={`w-6 h-6 rounded-r-md ${theme.secondary}`}></div>
-                                                        </div>
-                                                        <span className="text-sm">{theme.name}</span>
-                                                    </button>
-                                                ))}
-                                            </div>
-                                        </div>
                                     </div>
                                 </CardContent>
                                 <CardFooter className="flex justify-between">
@@ -673,28 +594,14 @@ export default function FlowchartGeneratorPage() {
                                         onClick={handleUpload}
                                         disabled={!file || isUploading || uploadStatus === "success"}
                                     >
-                                        {isUploading ? (
-                                            <>
-                                                <Loader variant="dots" size="sm" className="mr-2" />
-                                                Uploading...
-                                            </>
-                                        ) : (
-                                            "Upload"
-                                        )}
+                                        Upload
                                     </Button>
                                     <Button
                                         onClick={handleGenerate}
                                         disabled={uploadStatus !== "success" || isGenerating}
-                                        className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600"
+                                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
                                     >
-                                        {isGenerating ? (
-                                            <>
-                                                <Loader variant="spinner" size="sm" className="mr-2" />
-                                                Generating...
-                                            </>
-                                        ) : (
-                                            "Generate Mindmap"
-                                        )}
+                                        Generate Mindmap
                                     </Button>
                                 </CardFooter>
                             </Card>
@@ -713,37 +620,9 @@ export default function FlowchartGeneratorPage() {
                                                     </CardDescription>
                                                 </div>
                                                 <div className="flex space-x-2">
-                                                    <Button size="sm" variant="outline" className="flex items-center" onClick={downloadAsPDF}>
-                                                        <Download className="h-4 w-4 mr-1" />
-                                                        <span>Export PDF</span>
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" className="flex items-center" onClick={downloadAsPNG}>
-                                                        <FileDown className="h-4 w-4 mr-1" />
-                                                        <span>Export PNG</span>
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" className="flex items-center">
-                                                        <Share2 className="h-4 w-4 mr-1" />
-                                                        <span>Share</span>
-                                                    </Button>
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        className="flex items-center"
-                                                        onClick={() => {
-                                                            // Cycle through themes
-                                                            const themes: Array<"blue" | "purple" | "green" | "orange"> = [
-                                                                "blue",
-                                                                "purple",
-                                                                "green",
-                                                                "orange",
-                                                            ]
-                                                            const currentIndex = themes.indexOf(activeTheme)
-                                                            const nextIndex = (currentIndex + 1) % themes.length
-                                                            setActiveTheme(themes[nextIndex])
-                                                        }}
-                                                    >
-                                                        <Palette className="h-4 w-4 mr-1" />
-                                                        <span>Change Theme</span>
+                                                    <Button variant="outline" size="sm" onClick={downloadAsPDF} className="flex items-center">
+                                                        <Download className="h-4 w-4 mr-2" />
+                                                        Export as PDF
                                                     </Button>
                                                 </div>
                                             </div>
@@ -752,35 +631,29 @@ export default function FlowchartGeneratorPage() {
                                             {/* User Guide */}
                                             <div className="mb-6 p-4 bg-slate-700/30 rounded-lg border border-slate-600">
                                                 <div className="flex items-start space-x-4">
-                                                    <div className="bg-indigo-500 rounded-full p-2">
+                                                    <div className="bg-blue-500 rounded-full p-2">
                                                         <HelpCircle className="h-5 w-5" />
                                                     </div>
                                                     <div>
                                                         <h3 className="font-medium text-lg mb-2">How to Use Your Mindmap</h3>
                                                         <ul className="space-y-2 text-sm text-gray-300">
                                                             <li className="flex items-center">
-                                                                <ChevronRight className="h-4 w-4 mr-2 text-indigo-400" />
+                                                                <ChevronRight className="h-4 w-4 mr-2 text-blue-400" />
                                                                 <span>
                                                                     <strong>Expand/Collapse:</strong> Click on any node with a chevron to expand or
                                                                     collapse its children
                                                                 </span>
                                                             </li>
                                                             <li className="flex items-center">
-                                                                <ChevronDown className="h-4 w-4 mr-2 text-indigo-400" />
+                                                                <ChevronDown className="h-4 w-4 mr-2 text-blue-400" />
                                                                 <span>
                                                                     <strong>Expand All:</strong> Use the "Expand All" button to see the complete mindmap
                                                                 </span>
                                                             </li>
                                                             <li className="flex items-center">
-                                                                <Palette className="h-4 w-4 mr-2 text-indigo-400" />
+                                                                <Download className="h-4 w-4 mr-2 text-blue-400" />
                                                                 <span>
-                                                                    <strong>Change Theme:</strong> Click the theme button to cycle through color options
-                                                                </span>
-                                                            </li>
-                                                            <li className="flex items-center">
-                                                                <Download className="h-4 w-4 mr-2 text-indigo-400" />
-                                                                <span>
-                                                                    <strong>Export:</strong> Download your mindmap as PNG or PDF for sharing or printing
+                                                                    <strong>Export:</strong> Download your mindmap as PDF for sharing or printing
                                                                 </span>
                                                             </li>
                                                         </ul>
@@ -789,7 +662,7 @@ export default function FlowchartGeneratorPage() {
                                             </div>
 
                                             <div ref={mindmapContainerRef}>
-                                                <MindMap data={mindmapData} theme={activeTheme} expanded={false} />
+                                                <MindMap data={mindmapData} theme="blue" expanded={false} />
                                             </div>
                                         </CardContent>
                                         <CardFooter>
@@ -797,11 +670,11 @@ export default function FlowchartGeneratorPage() {
                                                 <div className="flex justify-between items-center mb-4">
                                                     <h3 className="font-medium">Visualization Details</h3>
                                                 </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="p-3 bg-slate-700/30 rounded-lg">
                                                         <div className="flex items-center justify-between">
                                                             <div className="flex items-center">
-                                                                <div className="w-3 h-3 rounded-full bg-purple-500 mr-2"></div>
+                                                                <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
                                                                 <span>Type</span>
                                                             </div>
                                                             <span className="text-sm text-gray-300">Mindmap</span>
@@ -814,15 +687,6 @@ export default function FlowchartGeneratorPage() {
                                                                 <span>Nodes</span>
                                                             </div>
                                                             <span className="text-sm text-gray-300">{countNodes(mindmapData.root)}</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="p-3 bg-slate-700/30 rounded-lg">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center">
-                                                                <div className="w-3 h-3 rounded-full bg-green-500 mr-2"></div>
-                                                                <span>Theme</span>
-                                                            </div>
-                                                            <span className="text-sm text-gray-300 capitalize">{activeTheme}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -839,7 +703,7 @@ export default function FlowchartGeneratorPage() {
                                                 setMindmapData(null)
                                                 setActiveTab("upload")
                                             }}
-                                            className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600"
+                                            className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
                                         >
                                             Generate New Mindmap
                                         </Button>

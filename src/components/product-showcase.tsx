@@ -6,11 +6,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 
 export default function ProductShowcase() {
     return (
-        <section className="py-20 px-4">
+        <section className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
             <div className="container mx-auto">
-                <h2 className="text-3xl md:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">
-                    Our AI-Powered Learning Tools
-                </h2>
+                <motion.h2
+                    className="text-3xl md:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent"
+                    initial={{ opacity: 0, y: 30 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.8 }}
+                    viewport={{ once: true }}
+                >
+                    Explore Our AI-Powered Learning Tools
+                </motion.h2>
 
                 {/* MCQ Generator */}
                 <div id="mcq" className="mb-32">
@@ -51,7 +57,7 @@ export default function ProductShowcase() {
                             transition={{ duration: 0.8 }}
                             viewport={{ once: true }}
                         >
-                            <Card className="bg-slate-800 border-slate-700">
+                            <Card className="bg-slate-800 border-slate-700 shadow-xl">
                                 <CardHeader>
                                     <CardTitle className="flex items-center">
                                         <FileText className="h-5 w-5 mr-2 text-purple-400" />
@@ -110,7 +116,7 @@ export default function ProductShowcase() {
                             viewport={{ once: true }}
                             className="order-2 md:order-1"
                         >
-                            <Card className="bg-slate-800 border-slate-700">
+                            <Card className="bg-slate-800 border-slate-700 shadow-xl">
                                 <CardHeader>
                                     <CardTitle className="flex items-center">
                                         <HelpCircle className="h-5 w-5 mr-2 text-blue-400" />
@@ -259,7 +265,7 @@ export default function ProductShowcase() {
                             transition={{ duration: 0.8 }}
                             viewport={{ once: true }}
                         >
-                            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 relative overflow-hidden">
+                            <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 relative overflow-hidden shadow-xl">
                                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20"></div>
                                 <img
                                     src="/placeholder.svg?height=400&width=600"
@@ -283,10 +289,10 @@ export default function ProductShowcase() {
                     viewport={{ once: true }}
                     className="text-center mt-20"
                 >
-                    <div className="max-w-3xl mx-auto bg-gradient-to-r from-purple-900/50 to-blue-900/50 p-8 rounded-xl border border-purple-700/50">
+                    <div className="max-w-3xl mx-auto bg-gradient-to-r from-purple-900/50 to-blue-900/50 p-8 rounded-xl border border-purple-700/50 shadow-lg">
                         <h3 className="text-2xl md:text-3xl font-bold mb-4">Ready to Transform Your Learning Experience?</h3>
                         <p className="text-gray-300 mb-6">
-                            Join thousands of students who are already using Notes Academy to enhance their study efficiency and
+                            Join thousands of students who are already using our platform to enhance their study efficiency and
                             knowledge retention.
                         </p>
                         <Button

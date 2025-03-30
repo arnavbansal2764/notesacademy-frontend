@@ -9,7 +9,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Call the external API
-        const response = await fetch("http://localhost:8080/generate-mcqs", {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/generate-mcqs`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

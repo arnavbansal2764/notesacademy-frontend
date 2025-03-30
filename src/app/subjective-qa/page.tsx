@@ -4,15 +4,13 @@ import type React from "react"
 
 import { useState, useRef } from "react"
 import { motion, AnimatePresence } from "framer-motion"
-import toast, { Toaster } from "react-hot-toast"
+import toast from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { Loader } from "@/components/ui/loader"
 import { Modal } from "@/components/ui/modal"
+import { AIVisualizationLoader } from "@/components/ui/ai-visualization-loader"
 import { FileUp, CheckCircle2, AlertCircle, Eye, BookOpen } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
@@ -72,14 +70,11 @@ export default function SubjectiveQAPage() {
             setUploadStatus("uploading")
             setUploadProgress(0)
 
-            const uploadToastId = toast.loading("Uploading your PDF...")
-
             const uploadResult = await uploadToS3(file, (progress) => {
                 setUploadProgress(progress)
             })
 
             if (!uploadResult.success || !uploadResult.url) {
-                toast.dismiss(uploadToastId)
                 throw new Error(uploadResult.error || "Failed to upload file")
             }
 
@@ -87,14 +82,8 @@ export default function SubjectiveQAPage() {
             setUploadStatus("success")
             setIsUploading(false)
 
-            toast.success("PDF uploaded successfully", {
-                id: uploadToastId,
-            })
-
             // Step 2: Generate questions using our API route
             setIsGenerating(true)
-
-            const generatingToastId = toast.loading("Our AI is analyzing your PDF and creating subjective questions...")
 
             const response = await fetch("/api/generate-subjective", {
                 method: "POST",
@@ -107,7 +96,6 @@ export default function SubjectiveQAPage() {
             })
 
             if (!response.ok) {
-                toast.dismiss(generatingToastId)
                 const errorData = await response.json()
                 throw new Error(errorData.error || "Failed to generate questions")
             }
@@ -117,9 +105,7 @@ export default function SubjectiveQAPage() {
             setQuestions(data.questions)
             setIsGenerating(false)
 
-            toast.success(`${data.questions.length} questions generated!`, {
-                id: generatingToastId,
-            })
+            toast.success(`${data.questions.length} questions generated!`)
 
             // Automatically switch to the questions tab
             setActiveTab("generated")
@@ -164,8 +150,15 @@ export default function SubjectiveQAPage() {
         <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
             <Navbar />
 
-            {/* React Hot Toast */}
-            <Toaster position="top-right" />
+            {/* AI Visualization Loaders */}
+            <AIVisualizationLoader isLoading={isUploading} message="Uploading your PDF" variant="upload" theme="blue" />
+
+            <AIVisualizationLoader
+                isLoading={isGenerating}
+                message="AI is creating subjective questions"
+                variant="pulse"
+                theme="blue"
+            />
 
             <main className="container mx-auto px-4 py-16">
                 <motion.div
@@ -282,7 +275,7 @@ export default function SubjectiveQAPage() {
                                                             ) : null}
                                                         </div>
 
-                                                        {uploadStatus === "uploading" && (
+                                                        {uploadStatus === "uploading" && !isUploading && (
                                                             <motion.div
                                                                 className="space-y-2"
                                                                 initial={{ opacity: 0 }}
@@ -299,31 +292,6 @@ export default function SubjectiveQAPage() {
                                                     </motion.div>
                                                 )}
                                             </AnimatePresence>
-
-                                            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="num-questions">Number of Questions</Label>
-                                                    <Input
-                                                        id="num-questions"
-                                                        type="number"
-                                                        defaultValue={5}
-                                                        min={3}
-                                                        max={10}
-                                                        className="bg-slate-700 border-slate-600"
-                                                    />
-                                                </div>
-
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="complexity">Complexity Level</Label>
-                                                    <select id="complexity" className="w-full rounded-md bg-slate-700 border-slate-600 p-2">
-                                                        <option value="basic">Basic Understanding</option>
-                                                        <option value="intermediate" selected>
-                                                            Critical Analysis
-                                                        </option>
-                                                        <option value="advanced">Advanced Synthesis</option>
-                                                    </select>
-                                                </div>
-                                            </motion.div>
                                         </motion.div>
                                     </CardContent>
                                     <CardFooter className="flex justify-end">
@@ -332,19 +300,7 @@ export default function SubjectiveQAPage() {
                                             disabled={!file || isUploading || isGenerating}
                                             className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
                                         >
-                                            {isUploading ? (
-                                                <div className="flex items-center">
-                                                    <Loader variant="dots" size="sm" className="mr-2" />
-                                                    <span>Uploading...</span>
-                                                </div>
-                                            ) : isGenerating ? (
-                                                <div className="flex items-center">
-                                                    <Loader variant="spinner" size="sm" className="mr-2" />
-                                                    <span>Generating Questions...</span>
-                                                </div>
-                                            ) : (
-                                                "Generate Questions"
-                                            )}
+                                            Generate Questions
                                         </Button>
                                     </CardFooter>
                                 </Card>
@@ -382,7 +338,7 @@ export default function SubjectiveQAPage() {
                                 </motion.div>
                             ) : (
                                 <div className="flex flex-col items-center justify-center py-12">
-                                    <Loader variant="pulse" size="lg" text="Loading questions..." />
+                                    <p className="text-gray-400">No questions generated yet.</p>
                                 </div>
                             )}
                         </TabsContent>

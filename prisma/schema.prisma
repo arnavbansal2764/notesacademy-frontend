@@ -1,0 +1,35 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String    @unique
+  password      String?   // Make password optional for Google auth
+  googleId      String?   // Store Google ID when they authenticate with Google
+  image         String?   // Profile image from Google
+  payments      Payment[]
+  createdAt     DateTime? @default(now()) // Make optional
+  updatedAt     DateTime? @default(now()) // Make optional
+}
+
+model Payment {
+  id             String   @id @default(auto()) @map("_id") @db.ObjectId
+  paymentId      String   @unique
+  userId         String   @db.ObjectId
+  user           User     @relation(fields: [userId], references: [id])
+  amount         Int
+  currency       String
+  paymentMethod  String
+  status         String
+  contactNumber  String?
+  createdAt      DateTime @default(now())
+  transactionId  String?
+  orderId        String?
+}

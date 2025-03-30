@@ -10,7 +10,7 @@ export async function POST(request: NextRequest) {
 
         try {
             // Call the external API
-            const response = await fetch("http://localhost:8080/generate-mindmap", {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/generate-mindmap`, {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
