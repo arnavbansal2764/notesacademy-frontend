@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Clock, FileText } from "lucide-react";
+import { Eye, Clock, FileText, Award, CheckCircle, XCircle } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { Modal } from "@/components/ui/modal";
@@ -25,13 +25,37 @@ interface SubjectiveResult {
   createdAt: string;
 }
 
+interface MCQResult {
+  id: string;
+  title: string;
+  pdfName: string | null;
+  pdfUrl: string;
+  totalQuestions: number;
+  correctAnswers: number;
+  incorrectAnswers: number;
+  score: number;
+  timeTaken: number;
+  questions: {
+    question: string;
+    options: string[];
+    correct_answer: string;
+    selected_answer?: string;
+    explanation?: string;
+  }[];
+  createdAt: string;
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [results, setResults] = useState<SubjectiveResult[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [selectedResult, setSelectedResult] = useState<SubjectiveResult | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [subjectiveResults, setSubjectiveResults] = useState<SubjectiveResult[]>([]);
+  const [mcqResults, setMcqResults] = useState<MCQResult[]>([]);
+  const [isLoadingSubjective, setIsLoadingSubjective] = useState(true);
+  const [isLoadingMCQ, setIsLoadingMCQ] = useState(true);
+  const [selectedSubjective, setSelectedSubjective] = useState<SubjectiveResult | null>(null);
+  const [selectedMCQ, setSelectedMCQ] = useState<MCQResult | null>(null);
+  const [isSubjectiveModalOpen, setIsSubjectiveModalOpen] = useState(false);
+  const [isMCQModalOpen, setIsMCQModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("subjective");
 
   useEffect(() => {
@@ -40,29 +64,57 @@ export default function DashboardPage() {
     }
 
     if (status === "authenticated") {
-      fetchResults();
+      fetchSubjectiveResults();
+      fetchMCQResults();
     }
   }, [status, router]);
 
-  const fetchResults = async () => {
-    setIsLoading(true);
+  const fetchSubjectiveResults = async () => {
+    setIsLoadingSubjective(true);
     try {
       const response = await fetch("/api/subjective-results");
       if (!response.ok) {
-        throw new Error("Failed to fetch results");
+        throw new Error("Failed to fetch subjective results");
       }
       const data = await response.json();
-      setResults(data.results);
+      setSubjectiveResults(data.results);
     } catch (error) {
-      console.error("Error fetching results:", error);
+      console.error("Error fetching subjective results:", error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingSubjective(false);
     }
   };
 
-  const viewResult = (result: SubjectiveResult) => {
-    setSelectedResult(result);
-    setIsModalOpen(true);
+  const fetchMCQResults = async () => {
+    setIsLoadingMCQ(true);
+    try {
+      const response = await fetch("/api/mcq-results");
+      if (!response.ok) {
+        throw new Error("Failed to fetch MCQ results");
+      }
+      const data = await response.json();
+      setMcqResults(data.results);
+    } catch (error) {
+      console.error("Error fetching MCQ results:", error);
+    } finally {
+      setIsLoadingMCQ(false);
+    }
+  };
+
+  const viewSubjectiveResult = (result: SubjectiveResult) => {
+    setSelectedSubjective(result);
+    setIsSubjectiveModalOpen(true);
+  };
+
+  const viewMCQResult = (result: MCQResult) => {
+    setSelectedMCQ(result);
+    setIsMCQModalOpen(true);
+  };
+
+  const formatTime = (seconds: number) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}m ${remainingSeconds}s`;
   };
 
   if (status === "loading") {
@@ -112,18 +164,18 @@ export default function DashboardPage() {
             </TabsList>
 
             <TabsContent value="subjective">
-              {isLoading ? (
+              {isLoadingSubjective ? (
                 <div className="flex justify-center py-12">
                   <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
                 </div>
-              ) : results.length > 0 ? (
+              ) : subjectiveResults.length > 0 ? (
                 <motion.div
                   className="grid grid-cols-1 md:grid-cols-2 gap-6"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.2 }}
                 >
-                  {results.map((result) => (
+                  {subjectiveResults.map((result) => (
                     <Card key={result.id} className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors">
                       <CardHeader>
                         <CardTitle className="flex justify-between items-center">
@@ -145,7 +197,7 @@ export default function DashboardPage() {
                       </CardContent>
                       <CardFooter className="flex justify-end">
                         <Button
-                          onClick={() => viewResult(result)}
+                          onClick={() => viewSubjectiveResult(result)}
                           className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
                         >
                           <Eye className="h-4 w-4 mr-2" />
@@ -175,16 +227,82 @@ export default function DashboardPage() {
             </TabsContent>
 
             <TabsContent value="mcq">
-              {/* This will be implemented separately for MCQ results */}
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="bg-slate-800 p-6 rounded-full mb-4">
-                  <FileText className="h-8 w-8 text-gray-400" />
+              {isLoadingMCQ ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
                 </div>
-                <h3 className="text-xl font-medium mb-2">MCQ Results</h3>
-                <p className="text-gray-400 mb-6 max-w-md">
-                  This section will display your MCQ quiz results once implemented
-                </p>
-              </div>
+              ) : mcqResults.length > 0 ? (
+                <motion.div
+                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {mcqResults.map((result) => (
+                    <Card key={result.id} className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors">
+                      <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                          <span className="truncate">{result.title || "MCQ Quiz"}</span>
+                          <span className="text-sm font-normal text-gray-400 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {formatDistanceToNow(new Date(result.createdAt), { addSuffix: true })}
+                          </span>
+                        </CardTitle>
+                        <CardDescription className="text-gray-400">
+                          Score: {result.score.toFixed(1)}% • {result.totalQuestions} questions
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="flex flex-col space-y-2">
+                          <p className="text-sm text-gray-300 truncate">
+                            <FileText className="h-4 w-4 inline mr-2" />
+                            {result.pdfName || "Unnamed document"}
+                          </p>
+                          <div className="flex justify-between items-center text-sm">
+                            <div className="flex items-center text-green-400">
+                              <CheckCircle className="h-4 w-4 mr-1" />
+                              {result.correctAnswers} correct
+                            </div>
+                            <div className="flex items-center text-red-400">
+                              <XCircle className="h-4 w-4 mr-1" />
+                              {result.incorrectAnswers} incorrect
+                            </div>
+                            <div className="flex items-center text-blue-400">
+                              <Clock className="h-4 w-4 mr-1" />
+                              {formatTime(result.timeTaken)}
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                      <CardFooter className="flex justify-end">
+                        <Button
+                          onClick={() => viewMCQResult(result)}
+                          className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Results
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="bg-slate-800 p-6 rounded-full mb-4">
+                    <Award className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-medium mb-2">No MCQ results yet</h3>
+                  <p className="text-gray-400 mb-6 max-w-md">
+                    Generate MCQ quizzes from your notes and complete them to see results here
+                  </p>
+                  <Button
+                    onClick={() => router.push("/mcq-generator")}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+                  >
+                    Generate MCQ Quiz
+                  </Button>
+                </div>
+              )}
             </TabsContent>
 
             <TabsContent value="mindmaps">
@@ -203,19 +321,19 @@ export default function DashboardPage() {
         </motion.div>
       </main>
 
-      {/* Detail Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        {selectedResult && (
+      {/* Subjective Q&A Detail Modal */}
+      <Modal isOpen={isSubjectiveModalOpen} onClose={() => setIsSubjectiveModalOpen(false)}>
+        {selectedSubjective && (
           <div className="p-6">
             <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              {selectedResult.title}
+              {selectedSubjective.title || "Subjective Q&A"}
             </h2>
             <p className="text-sm text-gray-400 mb-6">
-              Generated {formatDistanceToNow(new Date(selectedResult.createdAt), { addSuffix: true })}
+              Generated {formatDistanceToNow(new Date(selectedSubjective.createdAt), { addSuffix: true })}
             </p>
 
             <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-              {selectedResult.questions.map((qa, index) => (
+              {selectedSubjective.questions.map((qa, index) => (
                 <div key={index} className="border border-slate-700 rounded-lg p-4">
                   <h3 className="text-lg font-medium mb-2 text-blue-400">Question {index + 1}:</h3>
                   <p className="text-gray-300 p-3 bg-slate-700/50 rounded-lg mb-4">{qa.question}</p>
@@ -230,7 +348,116 @@ export default function DashboardPage() {
 
             <div className="mt-6 flex justify-end">
               <Button
-                onClick={() => setIsModalOpen(false)}
+                onClick={() => setIsSubjectiveModalOpen(false)}
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* MCQ Detail Modal */}
+      <Modal isOpen={isMCQModalOpen} onClose={() => setIsMCQModalOpen(false)}>
+        {selectedMCQ && (
+          <div className="p-6">
+            <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
+              {selectedMCQ.title || "MCQ Quiz Results"}
+            </h2>
+            
+            <div className="flex flex-wrap gap-4 mb-6">
+              <div className="bg-slate-800 p-3 rounded-lg">
+                <p className="text-xs text-gray-400">Score</p>
+                <p className="text-xl font-bold">{selectedMCQ.score.toFixed(1)}%</p>
+              </div>
+              <div className="bg-slate-800 p-3 rounded-lg">
+                <p className="text-xs text-gray-400">Time</p>
+                <p className="text-xl font-bold">{formatTime(selectedMCQ.timeTaken)}</p>
+              </div>
+              <div className="bg-slate-800 p-3 rounded-lg">
+                <p className="text-xs text-gray-400">Correct</p>
+                <p className="text-xl font-bold text-green-400">{selectedMCQ.correctAnswers}</p>
+              </div>
+              <div className="bg-slate-800 p-3 rounded-lg">
+                <p className="text-xs text-gray-400">Incorrect</p>
+                <p className="text-xl font-bold text-red-400">{selectedMCQ.incorrectAnswers}</p>
+              </div>
+              <div className="bg-slate-800 p-3 rounded-lg">
+                <p className="text-xs text-gray-400">Total</p>
+                <p className="text-xl font-bold">{selectedMCQ.totalQuestions}</p>
+              </div>
+            </div>
+
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+              {selectedMCQ.questions.map((question, qIndex) => {
+                const isCorrect = question.selected_answer === question.correct_answer;
+                
+                return (
+                  <div 
+                    key={qIndex} 
+                    className={`border rounded-lg p-4 ${
+                      question.selected_answer 
+                        ? isCorrect 
+                          ? "border-green-600 bg-green-900/10" 
+                          : "border-red-600 bg-red-900/10"
+                        : "border-slate-700"
+                    }`}
+                  >
+                    <h3 className="text-lg font-medium mb-3 flex items-start">
+                      <span className="bg-slate-700 text-white p-1 rounded-md mr-2 text-sm">
+                        {qIndex + 1}
+                      </span>
+                      <span className="text-white">{question.question}</span>
+                    </h3>
+                    
+                    <div className="ml-7 space-y-2 mb-4">
+                      {question.options.map((option, oIndex) => {
+                        const optionLetter = String.fromCharCode(65 + oIndex); // A, B, C, D
+                        const isSelected = question.selected_answer === optionLetter;
+                        const isCorrectOption = question.correct_answer === optionLetter;
+                        
+                        let optionClass = "p-2 rounded-md border border-slate-600";
+                        
+                        if (isSelected && isCorrect) {
+                          optionClass += " bg-green-900/20 border-green-500";
+                        } else if (isSelected && !isCorrect) {
+                          optionClass += " bg-red-900/20 border-red-500";
+                        } else if (isCorrectOption) {
+                          optionClass += " bg-green-900/20 border-green-500";
+                        }
+                        
+                        return (
+                          <div key={oIndex} className={optionClass}>
+                            <div className="flex items-start">
+                              <span className="mr-2 font-medium">{optionLetter}.</span>
+                              <span>{option}</span>
+                              {isSelected && !isCorrect && (
+                                <XCircle className="h-4 w-4 text-red-500 ml-auto" />
+                              )}
+                              {isCorrectOption && (
+                                <CheckCircle className="h-4 w-4 text-green-500 ml-auto" />
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    
+                    {question.explanation && (
+                      <div className="mt-4 p-3 bg-slate-800 rounded-md border border-slate-700">
+                        <p className="text-sm font-medium text-blue-400 mb-1">Explanation:</p>
+                        <p className="text-sm text-gray-300">{question.explanation}</p>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="mt-6 flex justify-end">
+              <Button
+                onClick={() => setIsMCQModalOpen(false)}
                 className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
               >
                 Close

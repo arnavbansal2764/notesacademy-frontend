@@ -15,6 +15,7 @@ import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
 import confetti from "canvas-confetti"
+import { useSession } from "next-auth/react"
 
 // Define types for our MCQ data
 interface MCQOption {
@@ -39,6 +40,9 @@ interface QuizResults {
 }
 
 export default function MCQGeneratorPage() {
+    // Add session
+    const { data: session } = useSession()
+
     // File upload states
     const [file, setFile] = useState<File | null>(null)
     const [isUploading, setIsUploading] = useState(false)
@@ -57,6 +61,10 @@ export default function MCQGeneratorPage() {
     const [quizStartTime, setQuizStartTime] = useState<number | null>(null)
     const [quizEndTime, setQuizEndTime] = useState<number | null>(null)
     const [quizResults, setQuizResults] = useState<QuizResults | null>(null)
+
+    // Add saving state
+    const [isSaving, setIsSaving] = useState(false)
+    const [savedResultId, setSavedResultId] = useState<string | null>(null)
 
     // Refs
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -219,13 +227,20 @@ export default function MCQGeneratorPage() {
 
         const score = (correctAnswers / mcqs.length) * 100
 
-        setQuizResults({
+        const results = {
             totalQuestions: mcqs.length,
             correctAnswers,
             incorrectAnswers,
             score,
             timeTaken,
-        })
+        }
+
+        setQuizResults(results)
+
+        // Save results to database if user is logged in
+        if (session?.user && file && s3Url) {
+            saveResultsToDatabase(results)
+        }
 
         // Show toast with results
         toast.success(`Quiz completed! Your score: ${Math.round(score)}%`)
@@ -237,6 +252,80 @@ export default function MCQGeneratorPage() {
                 spread: 70,
                 origin: { y: 0.6 },
             })
+        }
+    }
+
+    // Modified function to save results to database
+    const saveResultsToDatabase = async (results: QuizResults) => {
+        if (!session?.user) {
+            toast.error("You must be logged in to save results")
+            return
+        }
+
+        if (!file || !s3Url) {
+            toast.error("Missing file information")
+            return
+        }
+
+        setIsSaving(true)
+
+        try {
+            console.log("Preparing to save MCQ results to database...")
+            console.log("Session user:", session.user)
+
+            // Transform the mcqs to match the schema expected by the dashboard
+            const formattedQuestions = mcqs.map(mcq => ({
+                question: mcq.question,
+                options: mcq.options,
+                correct_answer: mcq.correct_answer,
+                selected_answer: mcq.userAnswer,
+                explanation: mcq.explanation
+            }));
+
+            console.log("Formatted questions:", formattedQuestions.length)
+
+            const requestData = {
+                pdfName: file.name,
+                pdfUrl: s3Url,
+                totalQuestions: results.totalQuestions,
+                correctAnswers: results.correctAnswers,
+                incorrectAnswers: results.incorrectAnswers,
+                score: results.score,
+                timeTaken: results.timeTaken,
+                questions: formattedQuestions,
+            };
+
+            console.log("Sending request to save MCQ results:", requestData);
+
+            const response = await fetch("/api/mcq-results", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestData),
+            });
+
+            const responseText = await response.text();
+            console.log("Response from server:", response.status, responseText);
+
+            if (!response.ok) {
+                throw new Error(`Failed to save results: ${response.status} ${responseText}`);
+            }
+
+            try {
+                const data = JSON.parse(responseText);
+                setSavedResultId(data.resultId);
+                console.log("Successfully saved result with ID:", data.resultId);
+                toast.success("Results saved to your dashboard");
+            } catch (parseError) {
+                console.error("Error parsing response as JSON:", parseError);
+                throw new Error("Invalid response from server");
+            }
+        } catch (error) {
+            console.error("Error saving results:", error);
+            toast.error(`Failed to save results: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        } finally {
+            setIsSaving(false);
         }
     }
 
