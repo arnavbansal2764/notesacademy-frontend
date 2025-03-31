@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     }
     
     // Create a new subjective result
-    const result = await prisma.subjectiveResult.create({
+    const result = await prisma.subjectiveresult.create({
       data: {
         userId: user.id,
         pdfName,
@@ -67,7 +67,7 @@ export async function GET(request: Request) {
     }
     
     // Get all subjective results for the user
-    const results = await prisma.subjectiveResult.findMany({
+    const results = await prisma.subjectiveresult.findMany({
       where: { userId: user.id },
       orderBy: { createdAt: "desc" },
     });

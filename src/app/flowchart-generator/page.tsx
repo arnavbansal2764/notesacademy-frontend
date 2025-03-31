@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useRef } from "react"
+import { useSession } from "next-auth/react"
 import toast from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -32,6 +33,9 @@ interface MindMapData {
 }
 
 export default function FlowchartGeneratorPage() {
+    // Get session for user authentication
+    const { data: session } = useSession()
+
     // File upload states
     const [file, setFile] = useState<File | null>(null)
     const [isUploading, setIsUploading] = useState(false)
@@ -46,6 +50,8 @@ export default function FlowchartGeneratorPage() {
     const [generatedVisualization, setGeneratedVisualization] = useState<boolean>(false)
     const [mindmapData, setMindmapData] = useState<MindMapData | null>(null)
     const [expandedNodes, setExpandedNodes] = useState<{ [key: string]: boolean }>({})
+    const [isSaving, setIsSaving] = useState(false)
+    const [savedMindmapId, setSavedMindmapId] = useState<string | null>(null)
 
     // Fixed theme to blue
     const activeTheme = "blue"
@@ -177,12 +183,77 @@ export default function FlowchartGeneratorPage() {
             // Success toast only after loader is dismissed
             setTimeout(() => {
                 toast.success("Visualization generated successfully!")
+
+                // Auto-save if user is logged in
+                if (session?.user) {
+                    saveMindmapToDatabase()
+                }
             }, 300)
         } catch (error) {
             console.error("Error generating visualization:", error)
             toast.error(error instanceof Error ? error.message : "Failed to generate visualization")
         } finally {
             setIsGenerating(false)
+        }
+    }
+
+    const saveMindmapToDatabase = async () => {
+        if (!session?.user) {
+            toast.error("You must be logged in to save mindmaps")
+            return
+        }
+
+        if (!mindmapData || !file || !s3Url) {
+            toast.error("Missing mindmap or file information")
+            return
+        }
+
+        setIsSaving(true)
+
+        try {
+            // console.log("Preparing to save mindmap to database...")
+
+            const nodeCount = countNodes(mindmapData.root)
+
+            const requestData = {
+                title: mindmapData.root.text,
+                pdfName: file.name,
+                pdfUrl: s3Url,
+                mindmapData: mindmapData,
+                nodeCount: nodeCount,
+            }
+
+            // console.log("Sending request to save mindmap:", requestData)
+
+            const response = await fetch("/api/mindmap-results", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify(requestData),
+            })
+
+            const responseText = await response.text()
+            // console.log("Response from server:", response.status, responseText)
+
+            if (!response.ok) {
+                throw new Error(`Failed to save mindmap: ${response.status} ${responseText}`)
+            }
+
+            try {
+                const data = JSON.parse(responseText)
+                setSavedMindmapId(data.resultId)
+                // console.log("Successfully saved mindmap with ID:", data.resultId)
+                toast.success("Mindmap saved to your dashboard")
+            } catch (parseError) {
+                console.error("Error parsing response as JSON:", parseError)
+                throw new Error("Invalid response from server")
+            }
+        } catch (error) {
+            console.error("Error saving mindmap:", error)
+            toast.error(`Failed to save mindmap: ${error instanceof Error ? error.message : "Unknown error"}`)
+        } finally {
+            setIsSaving(false)
         }
     }
 
@@ -620,6 +691,35 @@ export default function FlowchartGeneratorPage() {
                                                     </CardDescription>
                                                 </div>
                                                 <div className="flex space-x-2">
+                                                    {session?.user && !savedMindmapId && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            onClick={saveMindmapToDatabase}
+                                                            disabled={isSaving}
+                                                            className="flex items-center"
+                                                        >
+                                                            {isSaving ? (
+                                                                <>Saving...</>
+                                                            ) : (
+                                                                <>
+                                                                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                                                                    Save to Dashboard
+                                                                </>
+                                                            )}
+                                                        </Button>
+                                                    )}
+                                                    {savedMindmapId && (
+                                                        <Button
+                                                            variant="outline"
+                                                            size="sm"
+                                                            disabled={true}
+                                                            className="flex items-center text-green-500"
+                                                        >
+                                                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                                                            Saved to Dashboard
+                                                        </Button>
+                                                    )}
                                                     <Button variant="outline" size="sm" onClick={downloadAsPDF} className="flex items-center">
                                                         <Download className="h-4 w-4 mr-2" />
                                                         Export as PDF

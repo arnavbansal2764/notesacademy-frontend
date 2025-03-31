@@ -21,7 +21,7 @@ interface MindMapNode {
     style?: string
 }
 
-interface MindMapData {
+export interface MindMapData {
     root: {
         id: string
         text: string

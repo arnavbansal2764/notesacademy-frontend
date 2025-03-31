@@ -17,6 +17,7 @@ model User {
   payments      Payment[]
   subjectiveResults subjectiveresult[] 
   mcqResults    mcqresult[]  // Add this relation
+  mindmaps      mindmap[] // Add this relation
   createdAt     DateTime? @default(now()) // Make optional
   updatedAt     DateTime? @default(now()) // Make optional
 }
@@ -61,4 +62,16 @@ model mcqresult {
   pdfUrl          String   // S3 URL of the uploaded PDF
   questions       Json     // Store the full MCQ data including questions, options, answers
   createdAt       DateTime @default(now())
+}
+
+model mindmap {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  title       String?  // Optional title for the mindmap
+  pdfName     String?  // Name of the uploaded PDF
+  pdfUrl      String   // S3 URL of the uploaded PDF
+  mindmapData Json     // Store the complete mindmap structure
+  nodeCount   Int      // Total number of nodes
+  createdAt   DateTime @default(now())
 }

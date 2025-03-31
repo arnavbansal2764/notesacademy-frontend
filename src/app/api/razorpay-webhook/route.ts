@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
         const signature = req.headers.get("x-razorpay-signature") || "";
 
         // Log the entire webhook payload for debugging
-        console.log("\n*******Razorpay Webhook Received********\n", JSON.stringify(body, null, 2));
+        // console.log("\n*******Razorpay Webhook Received********\n", JSON.stringify(body, null, 2));
 
         const expectedSignature = crypto
             .createHmac("sha256", RAZORPAY_WEBHOOK_SECRET)
@@ -71,9 +71,9 @@ export async function POST(req: NextRequest) {
                         password: "" // Empty string as requested
                     }
                 });
-                console.log(`Created new user: ${user.id} (${email})`);
+                // console.log(`Created new user: ${user.id} (${email})`);
             } else {
-                console.log(`Found existing user: ${user.id} (${email})`);
+                // console.log(`Found existing user: ${user.id} (${email})`);
             }
             
             // Store payment information
@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
                 }
             });
             
-            console.log(`Payment recorded: ${payment.id} for user ${user.id}`);
+            // console.log(`Payment recorded: ${payment.id} for user ${user.id}`);
             
             return NextResponse.json({ 
                 message: "Payment processed successfully",
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Handle other events if needed
-        console.log(`Unhandled event: ${event}`);
+        // console.log(`Unhandled event: ${event}`);
         return NextResponse.json({ message: `Unhandled event: ${event}` }, { status: 200 });
         
     } catch (error) {

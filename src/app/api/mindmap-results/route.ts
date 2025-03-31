@@ -5,11 +5,11 @@ import prisma from '@/lib/prisma';
 
 export async function GET(req: Request) {
   try {
-    // console.log("GET MCQ RESULTS - Request received");
+    // console.log("GET MINDMAP RESULTS - Request received");
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
-      // console.log("GET MCQ RESULTS - Unauthorized, no session");
+      // console.log("GET MINDMAP RESULTS - Unauthorized, no session");
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
@@ -19,14 +19,13 @@ export async function GET(req: Request) {
     });
     
     if (!user) {
-      // console.log("GET MCQ RESULTS - User not found");
+      // console.log("GET MINDMAP RESULTS - User not found");
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
-    // console.log(`GET MCQ RESULTS - Fetching results for user ID: ${user.id}`);
+    // console.log(`GET MINDMAP RESULTS - Fetching results for user ID: ${user.id}`);
     
-    // Use correct capitalization matching the Prisma schema (MCQResult, not mCQResult)
-    const results = await prisma.mcqresult.findMany({
+    const results = await prisma.mindmap.findMany({
       where: {
         userId: user.id,
       },
@@ -35,11 +34,11 @@ export async function GET(req: Request) {
       },
     });
     
-    // console.log(`GET MCQ RESULTS - Found ${results.length} results`);
+    // console.log(`GET MINDMAP RESULTS - Found ${results.length} results`);
     
     return NextResponse.json({ results });
   } catch (error) {
-    console.error('Error fetching MCQ results:', error);
+    console.error('Error fetching mindmap results:', error);
     return NextResponse.json(
       { error: 'Failed to fetch results' },
       { status: 500 }
@@ -49,34 +48,27 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    // console.log("POST MCQ RESULTS - Request received");
+    // console.log("POST MINDMAP RESULTS - Request received");
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
-      // console.log("POST MCQ RESULTS - Unauthorized, no session");
+      // console.log("POST MINDMAP RESULTS - Unauthorized, no session");
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
     const data = await req.json();
     const { 
+      title,
       pdfName,
       pdfUrl,
-      totalQuestions, 
-      correctAnswers, 
-      incorrectAnswers,
-      score,
-      timeTaken,
-      questions 
+      mindmapData,
+      nodeCount
     } = data;
     
-    // console.log("POST MCQ RESULTS - Request data:", {
+    // console.log("POST MINDMAP RESULTS - Request data:", {
+      title,
       pdfName,
-      totalQuestions,
-      correctAnswers,
-      incorrectAnswers,
-      score,
-      timeTaken,
-      questionsCount: questions?.length
+      nodeCount
     });
     
     // Get user from email
@@ -85,34 +77,29 @@ export async function POST(req: Request) {
     });
     
     if (!user) {
-      // console.log("POST MCQ RESULTS - User not found");
+      // console.log("POST MINDMAP RESULTS - User not found");
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
     
-    // console.log(`POST MCQ RESULTS - Creating result for user ID: ${user.id}`);
+    // console.log(`POST MINDMAP RESULTS - Creating result for user ID: ${user.id}`);
     
-    // Use correct model name with proper capitalization
-    const result = await prisma.mcqresult.create({
+    // Save mindmap result to database
+    const result = await prisma.mindmap.create({
       data: {
         userId: user.id,
-        title: pdfName ? `MCQ Quiz - ${pdfName}` : 'MCQ Quiz',
+        title: title || (pdfName ? `Mindmap - ${pdfName}` : 'Untitled Mindmap'),
         pdfName,
         pdfUrl,
-        totalQuestions,
-        correctAnswers,
-        incorrectAnswers,
-        score,
-        timeTaken,
-        questions: questions,
+        mindmapData: mindmapData,
+        nodeCount,
       },
     });
     
-    // console.log(`POST MCQ RESULTS - Success, created result with ID: ${result.id}`);
+    // console.log(`POST MINDMAP RESULTS - Success, created result with ID: ${result.id}`);
     
-    // Make sure to return a response
     return NextResponse.json({ resultId: result.id, success: true });
   } catch (error) {
-    console.error('Error saving MCQ results:', error);
+    console.error('Error saving mindmap results:', error);
     return NextResponse.json(
       { error: 'Failed to save results', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

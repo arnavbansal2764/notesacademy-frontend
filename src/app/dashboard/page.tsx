@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Clock, FileText, Award, CheckCircle, XCircle } from "lucide-react";
+import { Eye, Clock, FileText, Award, CheckCircle, XCircle, Network } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { Modal } from "@/components/ui/modal";
@@ -45,17 +45,36 @@ interface MCQResult {
   createdAt: string;
 }
 
+interface MindmapResult {
+  id: string;
+  title: string;
+  pdfName: string | null;
+  pdfUrl: string;
+  nodeCount: number;
+  mindmapData: {
+    root: {
+      text: string;
+      children: any[];
+    };
+  };
+  createdAt: string;
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [subjectiveResults, setSubjectiveResults] = useState<SubjectiveResult[]>([]);
   const [mcqResults, setMcqResults] = useState<MCQResult[]>([]);
+  const [mindmapResults, setMindmapResults] = useState<MindmapResult[]>([]);
   const [isLoadingSubjective, setIsLoadingSubjective] = useState(true);
   const [isLoadingMCQ, setIsLoadingMCQ] = useState(true);
+  const [isLoadingMindmaps, setIsLoadingMindmaps] = useState(true);
   const [selectedSubjective, setSelectedSubjective] = useState<SubjectiveResult | null>(null);
   const [selectedMCQ, setSelectedMCQ] = useState<MCQResult | null>(null);
+  const [selectedMindmap, setSelectedMindmap] = useState<MindmapResult | null>(null);
   const [isSubjectiveModalOpen, setIsSubjectiveModalOpen] = useState(false);
   const [isMCQModalOpen, setIsMCQModalOpen] = useState(false);
+  const [isMindmapModalOpen, setIsMindmapModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("subjective");
 
   useEffect(() => {
@@ -66,6 +85,7 @@ export default function DashboardPage() {
     if (status === "authenticated") {
       fetchSubjectiveResults();
       fetchMCQResults();
+      fetchMindmapResults();
     }
   }, [status, router]);
 
@@ -101,6 +121,22 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchMindmapResults = async () => {
+    setIsLoadingMindmaps(true);
+    try {
+      const response = await fetch("/api/mindmap-results");
+      if (!response.ok) {
+        throw new Error("Failed to fetch mindmap results");
+      }
+      const data = await response.json();
+      setMindmapResults(data.results);
+    } catch (error) {
+      console.error("Error fetching mindmap results:", error);
+    } finally {
+      setIsLoadingMindmaps(false);
+    }
+  };
+
   const viewSubjectiveResult = (result: SubjectiveResult) => {
     setSelectedSubjective(result);
     setIsSubjectiveModalOpen(true);
@@ -109,6 +145,12 @@ export default function DashboardPage() {
   const viewMCQResult = (result: MCQResult) => {
     setSelectedMCQ(result);
     setIsMCQModalOpen(true);
+  };
+
+  const viewMindmapResult = (result: MindmapResult) => {
+    setSelectedMindmap(result);
+    setIsMindmapModalOpen(true);
+    router.push(`/flowchart-generator/view/${result.id}`);
   };
 
   const formatTime = (seconds: number) => {
@@ -306,16 +348,66 @@ export default function DashboardPage() {
             </TabsContent>
 
             <TabsContent value="mindmaps">
-              {/* This will be implemented separately for mindmaps */}
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <div className="bg-slate-800 p-6 rounded-full mb-4">
-                  <FileText className="h-8 w-8 text-gray-400" />
+              {isLoadingMindmaps ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
                 </div>
-                <h3 className="text-xl font-medium mb-2">Mindmaps</h3>
-                <p className="text-gray-400 mb-6 max-w-md">
-                  This section will display your generated mindmaps once implemented
-                </p>
-              </div>
+              ) : mindmapResults.length > 0 ? (
+                <motion.div
+                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {mindmapResults.map((result) => (
+                    <Card key={result.id} className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors">
+                      <CardHeader>
+                        <CardTitle className="flex justify-between items-center">
+                          <span className="truncate">{result.title}</span>
+                          <span className="text-sm font-normal text-gray-400 flex items-center">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {formatDistanceToNow(new Date(result.createdAt), { addSuffix: true })}
+                          </span>
+                        </CardTitle>
+                        <CardDescription className="text-gray-400">
+                          Mindmap • {result.nodeCount} nodes
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm text-gray-300 truncate">
+                          <FileText className="h-4 w-4 inline mr-2" />
+                          {result.pdfName || "Unnamed document"}
+                        </p>
+                      </CardContent>
+                      <CardFooter className="flex justify-end">
+                        <Button
+                          onClick={() => viewMindmapResult(result)}
+                          className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+                        >
+                          <Eye className="h-4 w-4 mr-2" />
+                          View Mindmap
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="bg-slate-800 p-6 rounded-full mb-4">
+                    <Network className="h-8 w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-xl font-medium mb-2">No mindmaps yet</h3>
+                  <p className="text-gray-400 mb-6 max-w-md">
+                    Generate mindmaps from your notes to visualize concepts and relationships
+                  </p>
+                  <Button
+                    onClick={() => router.push("/flowchart-generator")}
+                    className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+                  >
+                    Generate Mindmap
+                  </Button>
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </motion.div>
@@ -337,7 +429,7 @@ export default function DashboardPage() {
                 <div key={index} className="border border-slate-700 rounded-lg p-4">
                   <h3 className="text-lg font-medium mb-2 text-blue-400">Question {index + 1}:</h3>
                   <p className="text-gray-300 p-3 bg-slate-700/50 rounded-lg mb-4">{qa.question}</p>
-                  
+
                   <h4 className="text-md font-medium mb-2 text-indigo-400">Answer:</h4>
                   <p className="text-gray-300 p-3 bg-indigo-900/20 rounded-lg border border-indigo-800/30 whitespace-pre-line">
                     {qa.answer}
@@ -365,7 +457,7 @@ export default function DashboardPage() {
             <h2 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">
               {selectedMCQ.title || "MCQ Quiz Results"}
             </h2>
-            
+
             <div className="flex flex-wrap gap-4 mb-6">
               <div className="bg-slate-800 p-3 rounded-lg">
                 <p className="text-xs text-gray-400">Score</p>
@@ -392,14 +484,14 @@ export default function DashboardPage() {
             <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
               {selectedMCQ.questions.map((question, qIndex) => {
                 const isCorrect = question.selected_answer === question.correct_answer;
-                
+
                 return (
-                  <div 
-                    key={qIndex} 
+                  <div
+                    key={qIndex}
                     className={`border rounded-lg p-4 ${
-                      question.selected_answer 
-                        ? isCorrect 
-                          ? "border-green-600 bg-green-900/10" 
+                      question.selected_answer
+                        ? isCorrect
+                          ? "border-green-600 bg-green-900/10"
                           : "border-red-600 bg-red-900/10"
                         : "border-slate-700"
                     }`}
@@ -410,15 +502,15 @@ export default function DashboardPage() {
                       </span>
                       <span className="text-white">{question.question}</span>
                     </h3>
-                    
+
                     <div className="ml-7 space-y-2 mb-4">
                       {question.options.map((option, oIndex) => {
                         const optionLetter = String.fromCharCode(65 + oIndex); // A, B, C, D
                         const isSelected = question.selected_answer === optionLetter;
                         const isCorrectOption = question.correct_answer === optionLetter;
-                        
+
                         let optionClass = "p-2 rounded-md border border-slate-600";
-                        
+
                         if (isSelected && isCorrect) {
                           optionClass += " bg-green-900/20 border-green-500";
                         } else if (isSelected && !isCorrect) {
@@ -426,7 +518,7 @@ export default function DashboardPage() {
                         } else if (isCorrectOption) {
                           optionClass += " bg-green-900/20 border-green-500";
                         }
-                        
+
                         return (
                           <div key={oIndex} className={optionClass}>
                             <div className="flex items-start">
@@ -443,7 +535,7 @@ export default function DashboardPage() {
                         );
                       })}
                     </div>
-                    
+
                     {question.explanation && (
                       <div className="mt-4 p-3 bg-slate-800 rounded-md border border-slate-700">
                         <p className="text-sm font-medium text-blue-400 mb-1">Explanation:</p>

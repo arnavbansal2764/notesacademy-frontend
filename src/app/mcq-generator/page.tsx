@@ -270,8 +270,8 @@ export default function MCQGeneratorPage() {
         setIsSaving(true)
 
         try {
-            console.log("Preparing to save MCQ results to database...")
-            console.log("Session user:", session.user)
+            // console.log("Preparing to save MCQ results to database...")
+            // console.log("Session user:", session.user)
 
             // Transform the mcqs to match the schema expected by the dashboard
             const formattedQuestions = mcqs.map(mcq => ({
@@ -282,7 +282,7 @@ export default function MCQGeneratorPage() {
                 explanation: mcq.explanation
             }));
 
-            console.log("Formatted questions:", formattedQuestions.length)
+            // console.log("Formatted questions:", formattedQuestions.length)
 
             const requestData = {
                 pdfName: file.name,
@@ -295,7 +295,7 @@ export default function MCQGeneratorPage() {
                 questions: formattedQuestions,
             };
 
-            console.log("Sending request to save MCQ results:", requestData);
+            // console.log("Sending request to save MCQ results:", requestData);
 
             const response = await fetch("/api/mcq-results", {
                 method: "POST",
@@ -306,7 +306,7 @@ export default function MCQGeneratorPage() {
             });
 
             const responseText = await response.text();
-            console.log("Response from server:", response.status, responseText);
+            // console.log("Response from server:", response.status, responseText);
 
             if (!response.ok) {
                 throw new Error(`Failed to save results: ${response.status} ${responseText}`);
@@ -315,7 +315,7 @@ export default function MCQGeneratorPage() {
             try {
                 const data = JSON.parse(responseText);
                 setSavedResultId(data.resultId);
-                console.log("Successfully saved result with ID:", data.resultId);
+                // console.log("Successfully saved result with ID:", data.resultId);
                 toast.success("Results saved to your dashboard");
             } catch (parseError) {
                 console.error("Error parsing response as JSON:", parseError);
