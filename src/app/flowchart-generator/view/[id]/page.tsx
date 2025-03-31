@@ -65,7 +65,15 @@ export default function MindmapViewerPage() {
 
     const fetchMindmap = async () => {
       try {
-        const response = await fetch(`/api/mindmap-results/${mindmapId}`);
+        // Updated to use POST method with ID in the request body
+        const response = await fetch(`/api/mindmap-results/${mindmapId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ id: mindmapId }),
+        });
+        
         if (!response.ok) {
           throw new Error("Failed to fetch mindmap");
         }

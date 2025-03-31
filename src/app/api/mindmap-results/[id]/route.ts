@@ -3,20 +3,17 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
 
-export async function GET(
-  req: Request, 
-  { params }: { params: { id: string } }
-) {
+
+export async function POST(req: Request) {
   try {
-    // Get the ID from params object - must be awaited in Next.js App Router
-    const { id } = await params;
+    // Get ID from request body
+    const body = await req.json();
+    const { id } = body;
     const mindmapId = id;
     
-    // console.log(`GET MINDMAP DETAIL - Request received for ID: ${mindmapId}`);
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
-      // console.log("GET MINDMAP DETAIL - Unauthorized, no session");
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
     
@@ -30,11 +27,8 @@ export async function GET(
     });
     
     if (!user) {
-      // console.log("GET MINDMAP DETAIL - User not found");
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    
-    // console.log(`GET MINDMAP DETAIL - Fetching mindmap with ID: ${mindmapId}`);
     
     // Get the specific mindmap
     const mindmap = await prisma.mindmap.findUnique({
@@ -44,17 +38,13 @@ export async function GET(
     });
     
     if (!mindmap) {
-      // console.log(`GET MINDMAP DETAIL - Mindmap with ID ${mindmapId} not found`);
       return NextResponse.json({ error: 'Mindmap not found' }, { status: 404 });
     }
     
     // Check if the mindmap belongs to the user
     if (mindmap.userId !== user.id) {
-      // console.log(`GET MINDMAP DETAIL - User ${user.id} does not have permission to view mindmap ${mindmapId}`);
       return NextResponse.json({ error: 'You do not have permission to view this mindmap' }, { status: 403 });
     }
-    
-    // console.log(`GET MINDMAP DETAIL - Successfully fetched mindmap ${mindmapId}`);
     
     return NextResponse.json({ mindmap });
   } catch (error) {
