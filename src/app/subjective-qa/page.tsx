@@ -15,6 +15,7 @@ import { FileUp, CheckCircle2, AlertCircle, Eye, BookOpen } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
+import { useSession } from "next-auth/react"
 
 interface SubjectiveQuestion {
     question: string
@@ -22,6 +23,9 @@ interface SubjectiveQuestion {
 }
 
 export default function SubjectiveQAPage() {
+    // Add session
+    const { data: session } = useSession()
+
     // File upload states
     const [file, setFile] = useState<File | null>(null)
     const [isUploading, setIsUploading] = useState(false)
@@ -38,6 +42,10 @@ export default function SubjectiveQAPage() {
     // Modal states
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [selectedQuestion, setSelectedQuestion] = useState<SubjectiveQuestion | null>(null)
+
+    // Add new state
+    const [isSaving, setIsSaving] = useState(false)
+    const [savedResultId, setSavedResultId] = useState<string | null>(null)
 
     // Refs
     const fileInputRef = useRef<HTMLInputElement>(null)
@@ -107,6 +115,11 @@ export default function SubjectiveQAPage() {
 
             toast.success(`${data.questions.length} questions generated!`)
 
+            // Step 3: Save results to database if user is logged in
+            if (session?.user) {
+                await saveResults(data.questions, file.name, uploadResult.url)
+            }
+
             // Automatically switch to the questions tab
             setActiveTab("generated")
         } catch (error) {
@@ -117,6 +130,43 @@ export default function SubjectiveQAPage() {
             setIsGenerating(false)
 
             toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
+        }
+    }
+
+    // New function to save results
+    const saveResults = async (questions: SubjectiveQuestion[], pdfName: string, pdfUrl: string) => {
+        if (!session?.user) {
+            toast.error("You must be logged in to save results")
+            return
+        }
+
+        setIsSaving(true)
+
+        try {
+            const response = await fetch("/api/subjective-results", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    pdfName,
+                    pdfUrl,
+                    questions,
+                }),
+            })
+
+            if (!response.ok) {
+                throw new Error("Failed to save results")
+            }
+
+            const data = await response.json()
+            setSavedResultId(data.resultId)
+            toast.success("Results saved to your dashboard")
+        } catch (error) {
+            console.error("Error saving results:", error)
+            toast.error("Failed to save results")
+        } finally {
+            setIsSaving(false)
         }
     }
 

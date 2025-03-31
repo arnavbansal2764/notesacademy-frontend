@@ -15,6 +15,7 @@ model User {
   googleId      String?   // Store Google ID when they authenticate with Google
   image         String?   // Profile image from Google
   payments      Payment[]
+  subjectiveResults SubjectiveResult[] // Add this relation
   createdAt     DateTime? @default(now()) // Make optional
   updatedAt     DateTime? @default(now()) // Make optional
 }
@@ -32,4 +33,15 @@ model Payment {
   createdAt      DateTime @default(now())
   transactionId  String?
   orderId        String?
+}
+
+model SubjectiveResult {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id])
+  title       String?  // Optional title for the quiz/study session
+  pdfName     String?  // Name of the uploaded PDF
+  pdfUrl      String   // S3 URL of the uploaded PDF
+  questions   Json     // Store the questions and answers as JSON
+  createdAt   DateTime @default(now())
 }
