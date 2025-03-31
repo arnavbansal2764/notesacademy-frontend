@@ -65,11 +65,6 @@ export async function POST(req: Request) {
       nodeCount
     } = data;
     
-    // console.log("POST MINDMAP RESULTS - Request data:", {
-      title,
-      pdfName,
-      nodeCount
-    });
     
     // Get user from email
     const user = await prisma.user.findUnique({

@@ -12,6 +12,7 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { Modal } from "@/components/ui/modal";
 import { formatDistanceToNow } from "date-fns";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
 interface SubjectiveResult {
   id: string;
@@ -60,32 +61,57 @@ interface MindmapResult {
   createdAt: string;
 }
 
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  image?: string;
+  createdAt?: string;
+}
+
+interface PaymentHistory {
+  id: string;
+  paymentId: string;
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  status: string;
+  contactNumber?: string;
+  createdAt: string;
+  transactionId?: string;
+  orderId?: string;
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [subjectiveResults, setSubjectiveResults] = useState<SubjectiveResult[]>([]);
   const [mcqResults, setMcqResults] = useState<MCQResult[]>([]);
   const [mindmapResults, setMindmapResults] = useState<MindmapResult[]>([]);
+  const [userData, setUserData] = useState<User | null>(null);
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [isLoadingSubjective, setIsLoadingSubjective] = useState(true);
   const [isLoadingMCQ, setIsLoadingMCQ] = useState(true);
   const [isLoadingMindmaps, setIsLoadingMindmaps] = useState(true);
+  const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [selectedSubjective, setSelectedSubjective] = useState<SubjectiveResult | null>(null);
   const [selectedMCQ, setSelectedMCQ] = useState<MCQResult | null>(null);
   const [selectedMindmap, setSelectedMindmap] = useState<MindmapResult | null>(null);
   const [isSubjectiveModalOpen, setIsSubjectiveModalOpen] = useState(false);
   const [isMCQModalOpen, setIsMCQModalOpen] = useState(false);
   const [isMindmapModalOpen, setIsMindmapModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("subjective");
+  const [activeTab, setActiveTab] = useState("profile");
 
   useEffect(() => {
     if (status === "unauthenticated") {
-      router.push("/login");
+      router.push("/auth");
     }
 
     if (status === "authenticated") {
       fetchSubjectiveResults();
       fetchMCQResults();
       fetchMindmapResults();
+      fetchUserProfile();
     }
   }, [status, router]);
 
@@ -134,6 +160,23 @@ export default function DashboardPage() {
       console.error("Error fetching mindmap results:", error);
     } finally {
       setIsLoadingMindmaps(false);
+    }
+  };
+
+  const fetchUserProfile = async () => {
+    setIsLoadingProfile(true);
+    try {
+      const response = await fetch("/api/user-profile");
+      if (!response.ok) {
+        throw new Error("Failed to fetch user profile");
+      }
+      const data = await response.json();
+      setUserData(data.user);
+      setPaymentHistory(data.payments || []);
+    } catch (error) {
+      console.error("Error fetching user profile:", error);
+    } finally {
+      setIsLoadingProfile(false);
     }
   };
 
@@ -195,15 +238,178 @@ export default function DashboardPage() {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3, duration: 0.5 }}
           >
-            View your previously generated content and quiz results
+            View your previously generated content, quiz results and account information
           </motion.p>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsList className="grid w-full grid-cols-4 mb-8">
+              <TabsTrigger value="profile">Profile</TabsTrigger>
               <TabsTrigger value="subjective">Subjective Q&As</TabsTrigger>
               <TabsTrigger value="mcq">MCQ Results</TabsTrigger>
               <TabsTrigger value="mindmaps">Mindmaps</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="profile">
+              {isLoadingProfile ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
+                </div>
+              ) : (
+                <motion.div
+                  className="grid grid-cols-1 md:grid-cols-3 gap-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Card className="bg-slate-800 border-slate-700 md:col-span-1">
+                    <CardHeader>
+                      <CardTitle>Account Information</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex justify-center mb-6">
+                        <Avatar className="w-24 h-24 border-2 border-blue-500">
+                          <AvatarImage 
+                            src={userData?.image || ''} 
+                            alt={userData?.name || 'User'} 
+                          />
+                          <AvatarFallback 
+                            className="bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-3xl font-bold"
+                          >
+                            {userData?.name?.charAt(0)?.toUpperCase() || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <p className="text-xs text-gray-400">Name</p>
+                          <p className="font-medium">{userData?.name}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400">Email</p>
+                          <p className="font-medium">{userData?.email}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-gray-400">Member Since</p>
+                          <p className="font-medium">
+                            {userData?.createdAt
+                              ? new Date(userData.createdAt).toLocaleDateString()
+                              : "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-slate-800 border-slate-700 md:col-span-2">
+                    <CardHeader>
+                      <CardTitle>Activity Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="bg-slate-700/50 p-4 rounded-lg text-center">
+                          <p className="text-3xl font-bold text-blue-400">{subjectiveResults.length}</p>
+                          <p className="text-sm text-gray-300">Subjective Q&As</p>
+                        </div>
+                        <div className="bg-slate-700/50 p-4 rounded-lg text-center">
+                          <p className="text-3xl font-bold text-indigo-400">{mcqResults.length}</p>
+                          <p className="text-sm text-gray-300">MCQ Quizzes</p>
+                        </div>
+                        <div className="bg-slate-700/50 p-4 rounded-lg text-center">
+                          <p className="text-3xl font-bold text-purple-400">{mindmapResults.length}</p>
+                          <p className="text-sm text-gray-300">Mindmaps</p>
+                        </div>
+
+                        {mcqResults.length > 0 && (
+                          <div className="bg-slate-700/50 p-4 rounded-lg text-center col-span-2 md:col-span-3">
+                            <p className="text-sm text-gray-300 mb-1">Average Score</p>
+                            <div className="w-full bg-slate-600 h-4 rounded-full">
+                              <div
+                                className="bg-gradient-to-r from-green-500 to-blue-500 h-4 rounded-full"
+                                style={{
+                                  width: `${Math.min(
+                                    100,
+                                    Math.max(
+                                      0,
+                                      mcqResults.reduce((acc, result) => acc + result.score, 0) /
+                                        mcqResults.length
+                                    )
+                                  )}%`,
+                                }}
+                              ></div>
+                            </div>
+                            <p className="mt-1 font-medium">
+                              {(
+                                mcqResults.reduce((acc, result) => acc + result.score, 0) /
+                                mcqResults.length
+                              ).toFixed(1)}
+                              %
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-slate-800 border-slate-700 md:col-span-3">
+                    <CardHeader>
+                      <CardTitle>Payment History</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {paymentHistory.length > 0 ? (
+                        <div className="overflow-x-auto">
+                          <table className="w-full">
+                            <thead>
+                              <tr className="border-b border-slate-700">
+                                <th className="text-left p-2">Date</th>
+                                <th className="text-left p-2">Payment ID</th>
+                                <th className="text-left p-2">Amount</th>
+                                <th className="text-left p-2">Method</th>
+                                <th className="text-left p-2">Status</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {paymentHistory.map((payment) => (
+                                <tr
+                                  key={payment.id}
+                                  className="border-b border-slate-700/50 hover:bg-slate-700/30"
+                                >
+                                  <td className="p-2">
+                                    {new Date(payment.createdAt).toLocaleDateString()}
+                                  </td>
+                                  <td className="p-2 font-mono text-sm">{payment.paymentId}</td>
+                                  <td className="p-2">
+                                    {payment.amount / 100} {payment.currency.toUpperCase()}
+                                  </td>
+                                  <td className="p-2 capitalize">{payment.paymentMethod}</td>
+                                  <td className="p-2">
+                                    <span
+                                      className={`px-2 py-1 rounded-full text-xs ${
+                                        payment.status === "completed" || payment.status === "succeeded"
+                                          ? "bg-green-900/50 text-green-400"
+                                          : payment.status === "pending"
+                                          ? "bg-yellow-900/50 text-yellow-400"
+                                          : "bg-red-900/50 text-red-400"
+                                      }`}
+                                    >
+                                      {payment.status}
+                                    </span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-gray-400">
+                          <p>No payment history found</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              )}
+            </TabsContent>
 
             <TabsContent value="subjective">
               {isLoadingSubjective ? (
@@ -218,7 +424,10 @@ export default function DashboardPage() {
                   transition={{ delay: 0.2 }}
                 >
                   {subjectiveResults.map((result) => (
-                    <Card key={result.id} className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors">
+                    <Card
+                      key={result.id}
+                      className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors"
+                    >
                       <CardHeader>
                         <CardTitle className="flex justify-between items-center">
                           <span className="truncate">{result.title}</span>
@@ -281,7 +490,10 @@ export default function DashboardPage() {
                   transition={{ delay: 0.2 }}
                 >
                   {mcqResults.map((result) => (
-                    <Card key={result.id} className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors">
+                    <Card
+                      key={result.id}
+                      className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors"
+                    >
                       <CardHeader>
                         <CardTitle className="flex justify-between items-center">
                           <span className="truncate">{result.title || "MCQ Quiz"}</span>
@@ -360,7 +572,10 @@ export default function DashboardPage() {
                   transition={{ delay: 0.2 }}
                 >
                   {mindmapResults.map((result) => (
-                    <Card key={result.id} className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors">
+                    <Card
+                      key={result.id}
+                      className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors"
+                    >
                       <CardHeader>
                         <CardTitle className="flex justify-between items-center">
                           <span className="truncate">{result.title}</span>
@@ -413,7 +628,6 @@ export default function DashboardPage() {
         </motion.div>
       </main>
 
-      {/* Subjective Q&A Detail Modal */}
       <Modal isOpen={isSubjectiveModalOpen} onClose={() => setIsSubjectiveModalOpen(false)}>
         {selectedSubjective && (
           <div className="p-6">
@@ -450,7 +664,6 @@ export default function DashboardPage() {
         )}
       </Modal>
 
-      {/* MCQ Detail Modal */}
       <Modal isOpen={isMCQModalOpen} onClose={() => setIsMCQModalOpen(false)}>
         {selectedMCQ && (
           <div className="p-6">

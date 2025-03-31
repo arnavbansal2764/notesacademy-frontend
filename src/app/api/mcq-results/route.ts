@@ -70,14 +70,14 @@ export async function POST(req: Request) {
     } = data;
     
     // console.log("POST MCQ RESULTS - Request data:", {
-      pdfName,
-      totalQuestions,
-      correctAnswers,
-      incorrectAnswers,
-      score,
-      timeTaken,
-      questionsCount: questions?.length
-    });
+    //   pdfName,
+    //   totalQuestions,
+    //   correctAnswers,
+    //   incorrectAnswers,
+    //   score,
+    //   timeTaken,
+    //   questionsCount: questions?.length
+    // });
     
     // Get user from email
     const user = await prisma.user.findUnique({
