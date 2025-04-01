@@ -30,7 +30,7 @@ export async function uploadToS3(file: File, onProgress?: UploadProgressCallback
 
         // Set up upload parameters
         const params = {
-            Bucket: "uploadthingalternative",
+            Bucket: process.env.NEXT_AWS_BUCKET_NAME,
             Key: fileName,
             Body: file,
             ContentType: file.type,
