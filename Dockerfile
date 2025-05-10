@@ -12,6 +12,6 @@ RUN npm install
 
 RUN npm run build
 
-RUN rm -r src .eslintrc.json .gitignore Dockerfile tsconfig.json postcss.config.mjs README.md tailwind.config.ts types prisma
+RUN rm -r src
 
 CMD [ "npm", "run", "start"]
