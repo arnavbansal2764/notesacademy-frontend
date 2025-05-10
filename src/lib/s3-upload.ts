@@ -30,7 +30,7 @@ export async function uploadToS3(file: File, onProgress?: UploadProgressCallback
 
         // Set up upload parameters
         const params = {
-            Bucket: process.env.NEXT_AWS_BUCKET_NAME as string,
+            Bucket: "topperninja-backend",
             Key: fileName,
             Body: file,
             ContentType: file.type,
