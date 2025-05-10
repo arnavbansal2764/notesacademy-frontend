@@ -13,6 +13,7 @@ import Footer from "@/components/footer";
 import { Modal } from "@/components/ui/modal";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import toast from "react-hot-toast";
 
 interface SubjectiveResult {
   id: string;
@@ -51,13 +52,7 @@ interface MindmapResult {
   title: string;
   pdfName: string | null;
   pdfUrl: string;
-  nodeCount: number;
-  mindmapData: {
-    root: {
-      text: string;
-      children: any[];
-    };
-  };
+  mindmapUrl: string;
   createdAt: string;
 }
 
@@ -96,10 +91,8 @@ export default function DashboardPage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [selectedSubjective, setSelectedSubjective] = useState<SubjectiveResult | null>(null);
   const [selectedMCQ, setSelectedMCQ] = useState<MCQResult | null>(null);
-  const [selectedMindmap, setSelectedMindmap] = useState<MindmapResult | null>(null);
   const [isSubjectiveModalOpen, setIsSubjectiveModalOpen] = useState(false);
   const [isMCQModalOpen, setIsMCQModalOpen] = useState(false);
-  const [isMindmapModalOpen, setIsMindmapModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("profile");
 
   useEffect(() => {
@@ -151,11 +144,9 @@ export default function DashboardPage() {
     setIsLoadingMindmaps(true);
     try {
       const response = await fetch("/api/mindmap-results");
-      if (!response.ok) {
-        throw new Error("Failed to fetch mindmap results");
-      }
+      if (!response.ok) throw new Error("Failed to fetch mindmap results");
       const data = await response.json();
-      setMindmapResults(data.results);
+      setMindmapResults(data.results ?? []);    // ensure array
     } catch (error) {
       console.error("Error fetching mindmap results:", error);
     } finally {
@@ -191,9 +182,17 @@ export default function DashboardPage() {
   };
 
   const viewMindmapResult = (result: MindmapResult) => {
-    setSelectedMindmap(result);
-    setIsMindmapModalOpen(true);
-    router.push(`/flowchart-generator/view/${result.id}`);
+    if (!result.mindmapUrl) {
+      toast.error("Mindmap data is unavailable");
+      return;
+    }
+    
+    // Use the direct S3 URL from the mindmap result
+    router.push(
+      `/view?url=${encodeURIComponent(result.mindmapUrl)}&title=${encodeURIComponent(
+        result.title || "Mindmap"
+      )}`
+    );
   };
 
   const formatTime = (seconds: number) => {
@@ -565,47 +564,33 @@ export default function DashboardPage() {
                   <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
                 </div>
               ) : mindmapResults.length > 0 ? (
-                <motion.div
-                  className="grid grid-cols-1 md:grid-cols-2 gap-6"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {mindmapResults.map((result) => (
-                    <Card
+                    <div
                       key={result.id}
-                      className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors"
+                      className="p-4 bg-slate-800 rounded-lg border border-slate-700 flex flex-col"
                     >
-                      <CardHeader>
-                        <CardTitle className="flex justify-between items-center">
-                          <span className="truncate">{result.title}</span>
-                          <span className="text-sm font-normal text-gray-400 flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {formatDistanceToNow(new Date(result.createdAt), { addSuffix: true })}
-                          </span>
-                        </CardTitle>
-                        <CardDescription className="text-gray-400">
-                          Mindmap • {result.nodeCount} nodes
-                        </CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <p className="text-sm text-gray-300 truncate">
-                          <FileText className="h-4 w-4 inline mr-2" />
-                          {result.pdfName || "Unnamed document"}
-                        </p>
-                      </CardContent>
-                      <CardFooter className="flex justify-end">
-                        <Button
-                          onClick={() => viewMindmapResult(result)}
-                          className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
-                        >
-                          <Eye className="h-4 w-4 mr-2" />
-                          View Mindmap
-                        </Button>
-                      </CardFooter>
-                    </Card>
+                      <h3 className="text-lg font-semibold text-white truncate mb-2">
+                        {result.title}
+                      </h3>
+                      <p className="text-sm text-gray-400">
+                        Created: {new Date(result.createdAt).toLocaleDateString()}
+                      </p>
+                      <p className="text-sm text-gray-400 truncate mt-1">
+                        Source: {result.pdfName || "Unnamed"}
+                      </p>
+                      <Button
+                        onClick={() => viewMindmapResult(result)}
+                        disabled={!result.mindmapUrl}
+                        className={`mt-4 w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 
+                          ${!result.mindmapUrl ? "opacity-50 cursor-not-allowed" : ""}`}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        View Mindmap
+                      </Button>
+                    </div>
                   ))}
-                </motion.div>
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="bg-slate-800 p-6 rounded-full mb-4">

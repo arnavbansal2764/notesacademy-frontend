@@ -1,103 +1,51 @@
-import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
-import prisma from '@/lib/prisma';
+import prisma from "@/lib/prisma";
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
-    // console.log("GET MINDMAP RESULTS - Request received");
     const session = await getServerSession(authOptions);
-    
     if (!session?.user) {
-      // console.log("GET MINDMAP RESULTS - Unauthorized, no session");
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    
-    // Get user from email
+
+    // look up the user record
     const user = await prisma.user.findUnique({
       where: { email: session.user.email as string },
+      select: { id: true },
     });
-    
     if (!user) {
-      // console.log("GET MINDMAP RESULTS - User not found");
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
-    
-    // console.log(`GET MINDMAP RESULTS - Fetching results for user ID: ${user.id}`);
-    
-    const results = await prisma.mindmap.findMany({
-      where: {
-        userId: user.id,
+
+    // Fetch mindmaps with error handling and sorting
+    const mindmaps = await prisma.mindmap.findMany({
+      where: { userId: user.id },
+      select: {
+        id: true,
+        title: true,
+        pdfName: true,
+        pdfUrl: true,
+        mindmapUrl: true,
+        createdAt: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: 'desc' // Sort by newest first
       },
     });
-    
-    // console.log(`GET MINDMAP RESULTS - Found ${results.length} results`);
-    
-    return NextResponse.json({ results });
-  } catch (error) {
-    console.error('Error fetching mindmap results:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch results' },
-      { status: 500 }
-    );
-  }
-}
 
-export async function POST(req: Request) {
-  try {
-    // console.log("POST MINDMAP RESULTS - Request received");
-    const session = await getServerSession(authOptions);
-    
-    if (!session?.user) {
-      // console.log("POST MINDMAP RESULTS - Unauthorized, no session");
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-    
-    const data = await req.json();
-    const { 
-      title,
-      pdfName,
-      pdfUrl,
-      mindmapData,
-      nodeCount
-    } = data;
-    
-    
-    // Get user from email
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email as string },
+    // Return a clear response even if there are no mindmaps
+    return NextResponse.json({ 
+      results: mindmaps,
+      count: mindmaps.length,
+      hasResults: mindmaps.length > 0
     });
-    
-    if (!user) {
-      // console.log("POST MINDMAP RESULTS - User not found");
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-    
-    // console.log(`POST MINDMAP RESULTS - Creating result for user ID: ${user.id}`);
-    
-    // Save mindmap result to database
-    const result = await prisma.mindmap.create({
-      data: {
-        userId: user.id,
-        title: title || (pdfName ? `Mindmap - ${pdfName}` : 'Untitled Mindmap'),
-        pdfName,
-        pdfUrl,
-        mindmapData: mindmapData,
-        nodeCount,
-      },
-    });
-    
-    // console.log(`POST MINDMAP RESULTS - Success, created result with ID: ${result.id}`);
-    
-    return NextResponse.json({ resultId: result.id, success: true });
   } catch (error) {
-    console.error('Error saving mindmap results:', error);
-    return NextResponse.json(
-      { error: 'Failed to save results', details: error instanceof Error ? error.message : String(error) },
-      { status: 500 }
-    );
+    console.error("Error fetching mindmap results:", error);
+    return NextResponse.json({ 
+      error: "Failed to retrieve mindmaps", 
+      details: process.env.NODE_ENV === 'development' ? String(error) : undefined 
+    }, { status: 500 });
   }
 }

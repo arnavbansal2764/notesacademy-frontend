@@ -71,7 +71,6 @@ model mindmap {
   title       String?  // Optional title for the mindmap
   pdfName     String?  // Name of the uploaded PDF
   pdfUrl      String   // S3 URL of the uploaded PDF
-  mindmapData Json     // Store the complete mindmap structure
-  nodeCount   Int      // Total number of nodes
+  mindmapUrl  String   // URL to the generated mindmap JSON
   createdAt   DateTime @default(now())
 }

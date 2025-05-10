@@ -3,63 +3,42 @@
 import type React from "react"
 
 import { useState, useRef } from "react"
-import { useSession } from "next-auth/react"
-import toast from "react-hot-toast"
+import { motion, AnimatePresence } from "framer-motion"
+import toast, { Toaster } from "react-hot-toast"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
-import { AIVisualizationLoader } from "@/components/ui/ai-visualization-loader"
-import { FileUp, CheckCircle2, Download, HelpCircle, ChevronRight, ChevronDown } from "lucide-react"
+import { Loader } from "@/components/ui/loader"
+import { FileUp, CheckCircle2, Share, FileText, ArrowRight, RefreshCw, AlertCircle, History } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
-import { MindMap } from "@/components/mindmap/mindmap"
-import { jsPDF } from "jspdf"
-
-interface MindMapNode {
-    id: string
-    text: string
-    children: MindMapNode[]
-    style?: string
-}
-
-interface MindMapData {
-    root: {
-        id: string
-        text: string
-        children: MindMapNode[]
-    }
-}
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 export default function FlowchartGeneratorPage() {
-    // Get session for user authentication
+    const router = useRouter()
+
+    // Auth
     const { data: session } = useSession()
 
     // File upload states
     const [file, setFile] = useState<File | null>(null)
     const [isUploading, setIsUploading] = useState(false)
     const [isGenerating, setIsGenerating] = useState(false)
-    const [uploadStatus, setUploadStatus] = useState<"idle" | "uploading" | "success" | "error">("idle")
     const [uploadProgress, setUploadProgress] = useState(0)
     const [s3Url, setS3Url] = useState<string>("")
     const [errorMessage, setErrorMessage] = useState<string>("")
-    const [activeTab, setActiveTab] = useState<string>("upload")
 
     // Visualization states
-    const [generatedVisualization, setGeneratedVisualization] = useState<boolean>(false)
-    const [mindmapData, setMindmapData] = useState<MindMapData | null>(null)
-    const [expandedNodes, setExpandedNodes] = useState<{ [key: string]: boolean }>({})
-    const [isSaving, setIsSaving] = useState(false)
-    const [savedMindmapId, setSavedMindmapId] = useState<string | null>(null)
-
-    // Fixed theme to blue
-    const activeTheme = "blue"
+    const [mindmapUrl, setMindmapUrl] = useState<string>("")
+    const [mindmapTitle, setMindmapTitle] = useState<string>("")
+    const [currentStep, setCurrentStep] = useState<"upload" | "processing" | "result" | "error">("upload")
 
     // Refs
     const fileInputRef = useRef<HTMLInputElement>(null)
-    const mindmapContainerRef = useRef<HTMLDivElement>(null)
 
+    // Handle file selection
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const selectedFile = e.target.files?.[0] || null
         if (selectedFile && !selectedFile.name.toLowerCase().endsWith(".pdf")) {
@@ -70,748 +49,577 @@ export default function FlowchartGeneratorPage() {
 
         if (selectedFile) {
             toast.success(`${selectedFile.name} selected`)
+            setFile(selectedFile)
+            setErrorMessage("")
         }
-
-        setFile(selectedFile)
-        setUploadStatus("idle")
-        setErrorMessage("")
     }
 
-    const handleUpload = async () => {
-        if (!file) return
-
-        setIsUploading(true)
-        setUploadStatus("uploading")
-        setUploadProgress(0)
+    // Handle file upload and mindmap generation
+    const handleGenerateFlowchart = async () => {
+        if (!file) {
+            toast.error("Please select a PDF file first")
+            return
+        }
 
         try {
+            // Step 1: Upload file to S3
+            setIsUploading(true)
+            setCurrentStep("processing")
+            setUploadProgress(0)
+
+            const uploadToastId = toast.loading("Uploading your PDF...")
+
             const uploadResult = await uploadToS3(file, (progress) => {
                 setUploadProgress(progress)
             })
 
             if (!uploadResult.success || !uploadResult.url) {
+                toast.dismiss(uploadToastId)
                 throw new Error(uploadResult.error || "Failed to upload file")
             }
 
             setS3Url(uploadResult.url)
-            setUploadStatus("success")
             setIsUploading(false)
-            toast.success("PDF uploaded successfully")
-        } catch (error) {
-            console.error("Error uploading file:", error)
-            setUploadStatus("error")
-            setIsUploading(false)
-            toast.error("Failed to upload file")
-        }
-    }
 
-    const handleGenerate = async () => {
-        if (!s3Url) return
+            toast.success("PDF uploaded successfully", {
+                id: uploadToastId,
+            })
 
-        setIsGenerating(true)
+            // Step 2: Generate mindmap
+            setIsGenerating(true)
+            const generatingToastId = toast.loading("Generating your mindmap visualization...")
 
-        try {
             const response = await fetch("/api/generate-mindmap", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    pdf_url: s3Url,
+                    pdf_url: uploadResult.url,
                 }),
             })
 
             if (!response.ok) {
+                toast.dismiss(generatingToastId)
                 const errorData = await response.json()
-                throw new Error(errorData.error || "Failed to generate visualization")
+                throw new Error(errorData.error || "Failed to generate mindmap")
             }
 
-            // Parse the response
             const data = await response.json()
 
-            // For demonstration, we'll use sample data if the response doesn't match our expected format
-            if (data.root) {
-                setMindmapData(data)
-            } else {
-                // Sample data for demonstration
-                setMindmapData({
-                    root: {
-                        id: "root",
-                        text: file?.name?.replace(".pdf", "") || "Document Mindmap",
-                        children: [
-                            {
-                                id: "topic1",
-                                text: "Main Topic 1",
-                                children: [
-                                    {
-                                        id: "topic1_sub1",
-                                        text: "Subtopic 1.1",
-                                        children: [
-                                            {
-                                                id: "topic1_sub1_p1",
-                                                text: "Point 1.1.1",
-                                                children: [],
-                                            },
-                                            {
-                                                id: "topic1_sub1_p2",
-                                                text: "Point 1.1.2",
-                                                children: [],
-                                            },
-                                        ],
-                                    },
-                                ],
-                            },
-                            {
-                                id: "topic2",
-                                text: "Main Topic 2",
-                                children: [
-                                    {
-                                        id: "topic2_sub1",
-                                        text: "Subtopic 2.1",
-                                        children: [],
-                                    },
-                                ],
-                            },
-                        ],
-                    },
-                })
-            }
-
-            setGeneratedVisualization(true)
-            setActiveTab("generated")
-
-            // Success toast only after loader is dismissed
-            setTimeout(() => {
-                toast.success("Visualization generated successfully!")
-
-                // Auto-save if user is logged in
-                if (session?.user) {
-                    saveMindmapToDatabase()
-                }
-            }, 300)
-        } catch (error) {
-            console.error("Error generating visualization:", error)
-            toast.error(error instanceof Error ? error.message : "Failed to generate visualization")
-        } finally {
-            setIsGenerating(false)
-        }
-    }
-
-    const saveMindmapToDatabase = async () => {
-        if (!session?.user) {
-            toast.error("You must be logged in to save mindmaps")
-            return
-        }
-
-        if (!mindmapData || !file || !s3Url) {
-            toast.error("Missing mindmap or file information")
-            return
-        }
-
-        setIsSaving(true)
-
-        try {
-            // console.log("Preparing to save mindmap to database...")
-
-            const nodeCount = countNodes(mindmapData.root)
-
-            const requestData = {
-                title: mindmapData.root.text,
-                pdfName: file.name,
-                pdfUrl: s3Url,
-                mindmapData: mindmapData,
-                nodeCount: nodeCount,
-            }
-
-            // console.log("Sending request to save mindmap:", requestData)
-
-            const response = await fetch("/api/mindmap-results", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(requestData),
-            })
-
-            const responseText = await response.text()
-            // console.log("Response from server:", response.status, responseText)
-
-            if (!response.ok) {
-                throw new Error(`Failed to save mindmap: ${response.status} ${responseText}`)
-            }
-
-            try {
-                const data = JSON.parse(responseText)
-                setSavedMindmapId(data.resultId)
-                // console.log("Successfully saved mindmap with ID:", data.resultId)
-                toast.success("Mindmap saved to your dashboard")
-            } catch (parseError) {
-                console.error("Error parsing response as JSON:", parseError)
+            if (!data.mindmapUrl) {
                 throw new Error("Invalid response from server")
             }
+
+            // Set the mindmap URL and title
+            setMindmapUrl(data.mindmapUrl)
+            setMindmapTitle(data.title || "Generated Mindmap")
+
+            setIsGenerating(false)
+
+            toast.success("Mindmap generated successfully!", {
+                id: generatingToastId,
+            })
+
+            // Redirect to the view page with the mindmap URL and title as query parameters
+            router.push(
+                `/view?url=${encodeURIComponent(data.mindmapUrl)}&title=${encodeURIComponent(data.title || "Generated Mindmap")}`,
+            )
         } catch (error) {
-            console.error("Error saving mindmap:", error)
-            toast.error(`Failed to save mindmap: ${error instanceof Error ? error.message : "Unknown error"}`)
-        } finally {
-            setIsSaving(false)
+            console.error("Error in mindmap generation process:", error)
+            setErrorMessage(error instanceof Error ? error.message : "An unexpected error occurred")
+            setIsUploading(false)
+            setIsGenerating(false)
+            setCurrentStep("error")
+
+            toast.error(error instanceof Error ? error.message : "An unexpected error occurred")
         }
     }
 
-    const expandAllForExport = () => {
-        // Store current expansion state
-        const currentExpandedState = { ...expandedNodes }
+    // For demo purposes, load sample data
+    const loadSampleData = () => {
+        const sampleUrl = "https://raw.githubusercontent.com/jsoncrack/data/main/physics.json"
+        const sampleTitle = "Physics Concepts (Sample)"
 
-        // Expand all nodes
-        const allExpanded: { [key: string]: boolean } = {}
-        const expandAll = (node: any) => {
-            if (!node) return
-            if (node.id) allExpanded[node.id] = true
-            if (node.children && node.children.length > 0) {
-                node.children.forEach(expandAll)
-            }
-        }
-
-        if (mindmapData && mindmapData.root) {
-            expandAll(mindmapData.root)
-            // Update the state
-            setExpandedNodes(allExpanded)
-        }
-
-        // Return the stored state for restoration later
-        return currentExpandedState
+        // Redirect to the view page with the sample data
+        router.push(`/view?url=${encodeURIComponent(sampleUrl)}&title=${encodeURIComponent(sampleTitle)}`)
     }
 
-    // Enhanced PDF generation with beautiful design and clear organization
-    const downloadAsPDF = async () => {
-        if (!mindmapData) return
+    // Reset the form
+    const resetForm = () => {
+        setFile(null)
+        setS3Url("")
+        setMindmapUrl("")
+        setMindmapTitle("")
+        setCurrentStep("upload")
+        setErrorMessage("")
+    }
 
-        const loadingToast = toast.loading("Preparing PDF download...")
+    // Animation variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1,
+            },
+        },
+    }
 
-        try {
-            // Store original state to restore later
-            const originalState = expandAllForExport()
-
-            // Wait for DOM to update after expanding nodes
-            await new Promise((resolve) => setTimeout(resolve, 1000))
-
-            // Blue theme colors
-            const colors = {
-                primary: "#3b82f6",
-                secondary: "#0891b2",
-                accent: "#60a5fa",
-                border: "#93c5fd",
-                background: "#0f172a",
-                mainTopic: "#4169e1",
-                subTopic: "#38bdf8",
-                formula: "#2563eb",
-                connector: "#93c5fd",
-            }
-
-            // Create PDF document
-            const pdf = new jsPDF({
-                orientation: "portrait",
-                unit: "mm",
-                format: "a4",
-            })
-
-            // PDF dimensions
-            const pageWidth = pdf.internal.pageSize.getWidth()
-            const pageHeight = pdf.internal.pageSize.getHeight()
-            const margin = 15
-            const contentWidth = pageWidth - margin * 2
-
-            // Prepare for multi-column layout
-            const columnCount = 2
-            const columnWidth = (contentWidth - 10) / columnCount // 10mm gap between columns
-
-            // Node styling
-            const nodeHeight = 10
-            const nodeSpacing = 8
-            const indentation = 12
-
-            // Clean up node text by removing strange characters
-            const cleanNodeText = (text: string) => {
-                return text
-                    .replace(/ø=ÜÅ|ø=ÜÖ|ø=ÜA|ø=0A|ø=0Ö|ø=0O|ø=ÜO|ø=ÜC|ø=0C|ø=ÜD|ø=0D/g, "")
-                    .replace(/FORMULA:/i, "")
-                    .trim()
-            }
-
-            // Format formula text
-            const formatFormula = (formula: string) => {
-                return formula
-                    .replace(/\*/g, "×")
-                    .replace(/\//g, "÷")
-                    .replace(/\^2/g, "²")
-                    .replace(/\^3/g, "³")
-                    .replace(/sqrt/g, "√")
-                    .replace(/pi/g, "π")
-                    .replace(/theta/g, "θ")
-                    .replace(/delta/g, "δ")
-                    .replace(/\(/g, "(")
-                    .replace(/\)/g, ")")
-                    .replace(/\+/g, "+")
-                    .replace(/-/g, "-")
-                    .replace(/_/g, "_")
-            }
-
-            // Organize nodes by main topics for better layout
-            const processedNodes: {
-                id: string
-                text: string
-                level: number
-                isFormula: boolean
-                parent: string | null
-                x: number
-                y: number
-                width: number
-                height: number
-                column: number
-                page: number
-            }[] = []
-
-            // Process all nodes to prepare for layout
-            const processNode = (node: MindMapNode, level: number, parent: string | null = null) => {
-                const isFormula =
-                    node.text.includes("FORMULA:") ||
-                    node.style === "formula" ||
-                    node.text.includes("F =") ||
-                    node.text.includes("g =") ||
-                    node.text.includes("PE =") ||
-                    node.text.includes("W =")
-
-                processedNodes.push({
-                    id: node.id,
-                    text: cleanNodeText(node.text),
-                    level,
-                    isFormula,
-                    parent,
-                    x: 0,
-                    y: 0,
-                    width: 0,
-                    height: nodeHeight,
-                    column: 0,
-                    page: 0,
-                })
-
-                if (node.children && node.children.length > 0 && expandedNodes[node.id]) {
-                    node.children.forEach((child) => processNode(child, level + 1, node.id))
-                }
-            }
-
-            // Start processing from root
-            if (mindmapData.root.children && mindmapData.root.children.length > 0) {
-                mindmapData.root.children.forEach((mainTopic) => {
-                    processNode(mainTopic, 0)
-                })
-            }
-
-            // Organize nodes into columns and pages
-            const nodesPerColumn = Math.ceil(processedNodes.length / 6) // Adjust based on your content
-            const nodesPerPage = nodesPerColumn * columnCount
-            const pagesNeeded = Math.ceil(processedNodes.length / nodesPerPage)
-
-            // Assign column and page to each node
-            processedNodes.forEach((node, index) => {
-                const page = Math.floor(index / nodesPerPage)
-                const pageIndex = index % nodesPerPage
-                const column = Math.floor(pageIndex / nodesPerColumn)
-
-                node.page = page
-                node.column = column
-            })
-
-            // Calculate positions for each node
-            const calculatePositions = () => {
-                // Group nodes by page and column
-                const pageColumns: Record<number, Record<number, typeof processedNodes>> = {}
-
-                processedNodes.forEach((node) => {
-                    if (!pageColumns[node.page]) {
-                        pageColumns[node.page] = {}
-                    }
-
-                    if (!pageColumns[node.page][node.column]) {
-                        pageColumns[node.page][node.column] = []
-                    }
-
-                    pageColumns[node.page][node.column].push(node)
-                })
-
-                // Calculate positions for each node in each column
-                Object.keys(pageColumns).forEach((pageKey) => {
-                    const page = Number(pageKey)
-
-                    Object.keys(pageColumns[page]).forEach((columnKey) => {
-                        const column = Number(columnKey)
-                        const nodes = pageColumns[page][column]
-
-                        let currentY = 35 // Start position after header
-
-                        nodes.forEach((node) => {
-                            const x = margin + column * (columnWidth + 10) + node.level * indentation
-                            const width = columnWidth - node.level * indentation
-
-                            node.x = x
-                            node.y = currentY
-                            node.width = width
-
-                            currentY += nodeHeight + nodeSpacing
-                        })
-                    })
-                })
-            }
-
-            calculatePositions()
-
-            // Draw a node
-            const drawNode = (node: (typeof processedNodes)[0], pdf: jsPDF) => {
-                // Determine node style based on level and content
-                let fillColor
-                const textColor = "#ffffff"
-
-                if (node.level === 0) {
-                    // Main topic
-                    fillColor = colors.mainTopic
-                } else if (node.isFormula) {
-                    // Formula nodes
-                    fillColor = colors.formula
-                } else {
-                    // Subtopics
-                    fillColor = colors.subTopic
-                }
-
-                // Draw node background
-                pdf.setFillColor(fillColor)
-                pdf.rect(node.x, node.y, node.width, node.height, "F")
-
-                // Set text style
-                pdf.setTextColor(textColor)
-                pdf.setFont(node.level === 0 ? "helvetica-bold" : "helvetica", node.level === 0 ? "bold" : "normal")
-                pdf.setFontSize(node.level === 0 ? 10 : 9)
-
-                // Prepare text
-                let displayText = node.text
-                if (node.isFormula) {
-                    displayText = formatFormula(displayText)
-                }
-
-                // Calculate text width to check for overflow
-                const textWidth = (pdf.getStringUnitWidth(displayText) * pdf.getFontSize()) / pdf.internal.scaleFactor
-
-                // Truncate text if needed
-                if (textWidth > node.width - 6) {
-                    let truncated = displayText
-                    while (
-                        (pdf.getStringUnitWidth(truncated + "...") * pdf.getFontSize()) / pdf.internal.scaleFactor >
-                        node.width - 6 &&
-                        truncated.length > 0
-                    ) {
-                        truncated = truncated.slice(0, -1)
-                    }
-                    displayText = truncated + "..."
-                }
-
-                // Draw text centered vertically in the node
-                pdf.text(displayText, node.x + 3, node.y + node.height / 2 + 1, { baseline: "middle" })
-            }
-
-            // Draw a page
-            const drawPage = (pageIndex: number, pdf: jsPDF) => {
-                // Add new page if not the first page
-                if (pageIndex > 0) {
-                    pdf.addPage()
-                }
-
-                // Fill background
-                pdf.setFillColor(colors.background)
-                pdf.rect(0, 0, pageWidth, pageHeight, "F")
-
-                // Draw header
-                pdf.setFillColor("#1e3a8a")
-                pdf.rect(0, 0, pageWidth, 25, "F")
-
-                // Add title
-                pdf.setFont("helvetica", "bold")
-                pdf.setFontSize(16)
-                pdf.setTextColor(255, 255, 255)
-                pdf.text(mindmapData!.root.text, margin, 15)
-
-                // Add subtitle
-                pdf.setFont("helvetica", "normal")
-                pdf.setFontSize(9)
-                pdf.setTextColor(200, 200, 200)
-                pdf.text(
-                    `Generated on ${new Date().toLocaleDateString()} - Page ${pageIndex + 1} of ${pagesNeeded}`,
-                    margin,
-                    22,
-                )
-
-                // Draw nodes for this page
-                const pageNodes = processedNodes.filter((node) => node.page === pageIndex)
-                pageNodes.forEach((node) => drawNode(node, pdf))
-
-                // Draw footer
-                pdf.setFont("helvetica", "normal")
-                pdf.setFontSize(8)
-                pdf.setTextColor(150, 150, 150)
-                pdf.text("Created with Mindmap Generator", pageWidth / 2, pageHeight - 10, { align: "center" })
-            }
-
-            // Draw all pages
-            for (let i = 0; i < pagesNeeded; i++) {
-                drawPage(i, pdf)
-            }
-
-            // Save the PDF
-            pdf.save(`mindmap-${new Date().toISOString().slice(0, 10)}.pdf`)
-
-            // Restore original expansion state
-            setTimeout(() => setExpandedNodes(originalState), 500)
-
-            toast.dismiss(loadingToast)
-            toast.success("Mindmap downloaded as PDF!")
-        } catch (error) {
-            console.error("Error generating PDF:", error)
-            toast.dismiss(loadingToast)
-            toast.error("Failed to generate PDF. Please try again.")
-        }
+    const itemVariants = {
+        hidden: { y: 20, opacity: 0 },
+        visible: {
+            y: 0,
+            opacity: 1,
+            transition: { type: "spring", stiffness: 300, damping: 24 },
+        },
     }
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
             <Navbar />
 
-            {/* AI Visualization Loaders */}
-            <AIVisualizationLoader isLoading={isUploading} message="Uploading your PDF" variant="upload" theme="blue" />
-
-            <AIVisualizationLoader
-                isLoading={isGenerating}
-                message="AI is processing your data"
-                variant="wave"
-                theme="blue"
-            />
 
             <main className="container mx-auto px-4 py-16">
                 <div className="max-w-5xl mx-auto">
-                    <h1 className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent">
-                        Mindmap & Concept Map Generator
-                    </h1>
-                    <p className="text-gray-300 mb-8">
-                        Transform complex concepts into visual, easy-to-understand mindmaps. Our AI analyzes your PDF content and
-                        creates beautiful, interactive visualizations.
-                    </p>
+                    <motion.h1
+                        className="text-3xl md:text-4xl font-bold mb-4 bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent"
+                        initial={{ opacity: 0, y: -20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5 }}
+                    >
+                        Flowchart & Mindmap Generator
+                    </motion.h1>
+                    <motion.p
+                        className="text-gray-300 mb-8"
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.1 }}
+                    >
+                        Transform complex concepts into visual, easy-to-understand flowcharts and mindmaps. Our AI analyzes your PDF
+                        content and creates beautiful, interactive visualizations.
+                    </motion.p>
 
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                        <TabsList className="grid w-full grid-cols-2 mb-8">
-                            <TabsTrigger value="upload">Upload PDF</TabsTrigger>
-                            <TabsTrigger value="generated" disabled={!generatedVisualization}>
-                                Generated Visualization
-                            </TabsTrigger>
-                        </TabsList>
+                    <AnimatePresence mode="wait">
+                        {currentStep === "upload" && (
+                            <motion.div
+                                key="upload"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <Card className="bg-slate-800 border-slate-700">
+                                    <CardHeader>
+                                        <CardTitle>Upload Your Study Material</CardTitle>
+                                        <CardDescription className="text-gray-400">
+                                            Upload a PDF file to generate an interactive mindmap visualization
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
+                                            <motion.div
+                                                variants={itemVariants}
+                                                className="border-2 border-dashed border-slate-600 rounded-lg p-8 text-center hover:bg-slate-700/50 transition-colors cursor-pointer"
+                                                onClick={() => fileInputRef.current?.click()}
+                                                whileHover={{ scale: 1.02 }}
+                                                whileTap={{ scale: 0.98 }}
+                                            >
+                                                <input
+                                                    type="file"
+                                                    id="pdf-upload"
+                                                    className="hidden"
+                                                    accept=".pdf"
+                                                    onChange={handleFileChange}
+                                                    ref={fileInputRef}
+                                                />
+                                                <motion.div
+                                                    initial={{ scale: 0.8, opacity: 0 }}
+                                                    animate={{ scale: 1, opacity: 1 }}
+                                                    transition={{ type: "spring", stiffness: 300, damping: 25, delay: 0.2 }}
+                                                >
+                                                    <FileUp className="h-16 w-16 mx-auto mb-4 text-indigo-400" />
+                                                </motion.div>
+                                                <motion.p
+                                                    className="text-xl font-medium mb-2"
+                                                    initial={{ y: 10, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.3 }}
+                                                >
+                                                    {file ? file.name : "Drag & drop or click to upload"}
+                                                </motion.p>
+                                                <motion.p
+                                                    className="text-sm text-gray-400"
+                                                    initial={{ y: 10, opacity: 0 }}
+                                                    animate={{ y: 0, opacity: 1 }}
+                                                    transition={{ delay: 0.4 }}
+                                                >
+                                                    Supports PDF files up to 10MB
+                                                </motion.p>
+                                                {errorMessage && (
+                                                    <motion.p
+                                                        className="text-sm text-red-500 mt-2"
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                    >
+                                                        {errorMessage}
+                                                    </motion.p>
+                                                )}
+                                            </motion.div>
 
-                        <TabsContent value="upload">
+                                            {file && (
+                                                <motion.div
+                                                    className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg"
+                                                    initial={{ opacity: 0, height: 0 }}
+                                                    animate={{ opacity: 1, height: "auto" }}
+                                                    transition={{ duration: 0.3 }}
+                                                >
+                                                    <div className="flex items-center">
+                                                        <FileText className="h-5 w-5 mr-2 text-purple-400" />
+                                                        <span className="text-sm truncate max-w-[200px]">{file.name}</span>
+                                                    </div>
+                                                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                                                </motion.div>
+                                            )}
+
+                                            <motion.div
+                                                className="flex flex-col sm:flex-row justify-center gap-4 pt-4"
+                                                variants={itemVariants}
+                                            >
+                                                <Button
+                                                    onClick={handleGenerateFlowchart}
+                                                    disabled={!file}
+                                                    className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600"
+                                                    size="lg"
+                                                >
+                                                    <FileUp className="mr-2 h-4 w-4" />
+                                                    Generate Mindmap
+                                                </Button>
+                                                <Button variant="outline" size="lg" onClick={loadSampleData}>
+                                                    View Sample
+                                                </Button>
+                                            </motion.div>
+                                        </motion.div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
+                        )}
+
+                        {currentStep === "processing" && (
+                            <motion.div
+                                key="processing"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <Card className="bg-slate-800 border-slate-700">
+                                    <CardHeader>
+                                        <CardTitle>Processing Your Document</CardTitle>
+                                        <CardDescription className="text-gray-400">
+                                            Please wait while we analyze your PDF and generate a mindmap
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="space-y-8 py-8">
+                                            <div className="flex flex-col items-center justify-center">
+                                                {isUploading ? (
+                                                    <div className="space-y-6 w-full max-w-md">
+                                                        <div className="flex justify-between text-sm mb-2">
+                                                            <span>Uploading PDF...</span>
+                                                            <span>{uploadProgress}%</span>
+                                                        </div>
+                                                        <Progress value={uploadProgress} className="h-2" />
+                                                        <div className="flex justify-center">
+                                                            <Loader variant="dots" size="lg" text="Uploading to secure storage" />
+                                                        </div>
+                                                    </div>
+                                                ) : isGenerating ? (
+                                                    <div className="space-y-8 w-full">
+                                                        <div className="flex justify-center">
+                                                            <div className="relative w-32 h-32">
+                                                                {/* Neural network animation */}
+                                                                <motion.div
+                                                                    className="absolute inset-0 rounded-full border-4 border-indigo-500/30"
+                                                                    animate={{
+                                                                        scale: [1, 1.2, 1],
+                                                                        borderColor: [
+                                                                            "rgba(99, 102, 241, 0.3)",
+                                                                            "rgba(168, 85, 247, 0.3)",
+                                                                            "rgba(236, 72, 153, 0.3)",
+                                                                            "rgba(99, 102, 241, 0.3)",
+                                                                        ],
+                                                                    }}
+                                                                    transition={{
+                                                                        duration: 3,
+                                                                        repeat: Number.POSITIVE_INFINITY,
+                                                                        ease: "easeInOut",
+                                                                    }}
+                                                                />
+
+                                                                {/* Nodes */}
+                                                                {[...Array(6)].map((_, i) => {
+                                                                    const angle = (i * Math.PI * 2) / 6
+                                                                    const x = Math.cos(angle) * 40
+                                                                    const y = Math.sin(angle) * 40
+
+                                                                    return (
+                                                                        <motion.div
+                                                                            key={i}
+                                                                            className="absolute w-4 h-4 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
+                                                                            style={{ left: "calc(50% - 8px)", top: "calc(50% - 8px)", x, y }}
+                                                                            animate={{
+                                                                                scale: [1, 1.3, 1],
+                                                                                backgroundColor: [
+                                                                                    "rgb(99, 102, 241)",
+                                                                                    "rgb(168, 85, 247)",
+                                                                                    "rgb(236, 72, 153)",
+                                                                                    "rgb(99, 102, 241)",
+                                                                                ],
+                                                                            }}
+                                                                            transition={{
+                                                                                duration: 2,
+                                                                                repeat: Number.POSITIVE_INFINITY,
+                                                                                delay: i * 0.3,
+                                                                                ease: "easeInOut",
+                                                                            }}
+                                                                        />
+                                                                    )
+                                                                })}
+
+                                                                {/* Center node */}
+                                                                <motion.div
+                                                                    className="absolute left-1/2 top-1/2 w-8 h-8 -ml-4 -mt-4 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-full shadow-lg shadow-purple-500/20"
+                                                                    animate={{
+                                                                        scale: [1, 1.2, 1],
+                                                                        boxShadow: [
+                                                                            "0 0 0 0 rgba(168, 85, 247, 0.4)",
+                                                                            "0 0 0 10px rgba(168, 85, 247, 0)",
+                                                                            "0 0 0 0 rgba(168, 85, 247, 0)",
+                                                                        ],
+                                                                    }}
+                                                                    transition={{
+                                                                        duration: 2,
+                                                                        repeat: Number.POSITIVE_INFINITY,
+                                                                        ease: "easeInOut",
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="text-center">
+                                                            <motion.h3
+                                                                className="text-xl font-bold bg-gradient-to-r from-indigo-400 via-purple-500 to-pink-500 bg-clip-text text-transparent mb-2"
+                                                                animate={{
+                                                                    opacity: [0.7, 1, 0.7],
+                                                                }}
+                                                                transition={{
+                                                                    duration: 2,
+                                                                    repeat: Number.POSITIVE_INFINITY,
+                                                                    ease: "easeInOut",
+                                                                }}
+                                                            >
+                                                                AI Processing
+                                                            </motion.h3>
+                                                            <p className="text-gray-400 mb-6">
+                                                                Our AI is analyzing your document and creating a mindmap
+                                                            </p>
+                                                        </div>
+
+                                                        <div className="space-y-4 max-w-md mx-auto">
+                                                            <motion.div
+                                                                className="flex items-center space-x-3 p-4 bg-slate-700/30 rounded-lg border border-indigo-500/20"
+                                                                initial={{ opacity: 0, y: 20 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                transition={{ delay: 0.5 }}
+                                                            >
+                                                                <div className="bg-indigo-500/20 p-2 rounded-full">
+                                                                    <CheckCircle2 className="h-5 w-5 text-indigo-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-medium text-white">Document Analysis</div>
+                                                                    <div className="text-sm text-gray-400">Parsing structure and content</div>
+                                                                </div>
+                                                            </motion.div>
+
+                                                            <motion.div
+                                                                className="flex items-center space-x-3 p-4 bg-slate-700/30 rounded-lg border border-purple-500/20"
+                                                                initial={{ opacity: 0, y: 20 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                transition={{ delay: 1.2 }}
+                                                            >
+                                                                <div className="bg-purple-500/20 p-2 rounded-full">
+                                                                    <CheckCircle2 className="h-5 w-5 text-purple-400" />
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-medium text-white">Concept Extraction</div>
+                                                                    <div className="text-sm text-gray-400">Identifying key topics and relationships</div>
+                                                                </div>
+                                                            </motion.div>
+
+                                                            <motion.div
+                                                                className="flex items-center space-x-3 p-4 bg-slate-700/30 rounded-lg border border-pink-500/20"
+                                                                initial={{ opacity: 0, y: 20 }}
+                                                                animate={{ opacity: 1, y: 0 }}
+                                                                transition={{ delay: 1.9 }}
+                                                            >
+                                                                <div className="bg-pink-500/20 p-2 rounded-full">
+                                                                    <motion.div
+                                                                        animate={{ rotate: 360 }}
+                                                                        transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY, ease: "linear" }}
+                                                                    >
+                                                                        <RefreshCw className="h-5 w-5 text-pink-400" />
+                                                                    </motion.div>
+                                                                </div>
+                                                                <div>
+                                                                    <div className="font-medium text-white">Visualization Generation</div>
+                                                                    <div className="text-sm text-gray-400">Creating interactive mindmap</div>
+                                                                </div>
+                                                            </motion.div>
+                                                        </div>
+
+                                                        {/* Animated progress bar */}
+                                                        <motion.div
+                                                            className="max-w-md mx-auto h-1 bg-slate-700 rounded-full overflow-hidden"
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            transition={{ delay: 2.5 }}
+                                                        >
+                                                            <motion.div
+                                                                className="h-full bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500"
+                                                                initial={{ width: "0%" }}
+                                                                animate={{ width: "100%" }}
+                                                                transition={{
+                                                                    duration: 15,
+                                                                    ease: "easeInOut",
+                                                                }}
+                                                            />
+                                                        </motion.div>
+                                                    </div>
+                                                ) : null}
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="flex justify-center">
+                                        <Button variant="outline" onClick={resetForm}>
+                                            Cancel
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            </motion.div>
+                        )}
+
+                        {currentStep === "error" && (
+                            <motion.div
+                                key="error"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                transition={{ duration: 0.3 }}
+                            >
+                                <Card className="bg-slate-800 border-slate-700">
+                                    <CardHeader>
+                                        <CardTitle className="text-red-500 flex items-center">
+                                            <AlertCircle className="h-5 w-5 mr-2" />
+                                            Error Processing Your Document
+                                        </CardTitle>
+                                        <CardDescription className="text-gray-400">
+                                            We encountered a problem while generating your mindmap
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
+                                            <p className="text-red-400">{errorMessage || "An unexpected error occurred"}</p>
+                                        </div>
+                                        <div className="space-y-4">
+                                            <p className="text-gray-300">Here are some things you can try:</p>
+                                            <ul className="list-disc pl-5 space-y-2 text-gray-400">
+                                                <li>Check that your PDF is not password protected</li>
+                                                <li>Ensure your PDF contains readable text (not just scanned images)</li>
+                                                <li>Try with a smaller PDF file (under 10MB)</li>
+                                                <li>Check your internet connection and try again</li>
+                                            </ul>
+                                        </div>
+                                    </CardContent>
+                                    <CardFooter className="flex justify-between">
+                                        <Button variant="outline" onClick={loadSampleData}>
+                                            <History className="h-4 w-4 mr-2" />
+                                            View Sample
+                                        </Button>
+                                        <Button
+                                            onClick={resetForm}
+                                            className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600"
+                                        >
+                                            Try Again
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
+                    {/* Features Section */}
+                    <motion.div
+                        className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-6"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.5, delay: 0.3 }}
+                    >
+                        <div className="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                            <div className="bg-indigo-500/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                                <FileUp className="h-6 w-6 text-indigo-400" />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">Upload Any PDF</h3>
+                            <p className="text-gray-400">
+                                Simply upload your study materials, research papers, or any PDF document to get started.
+                            </p>
+                        </div>
+
+                        <div className="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                            <div className="bg-purple-500/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                                <ArrowRight className="h-6 w-6 text-purple-400" />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">AI Processing</h3>
+                            <p className="text-gray-400">
+                                Our advanced AI analyzes your document, extracts key concepts, and identifies relationships.
+                            </p>
+                        </div>
+
+                        <div className="bg-slate-800/50 p-6 rounded-lg border border-slate-700">
+                            <div className="bg-pink-500/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                                <Share className="h-6 w-6 text-pink-400" />
+                            </div>
+                            <h3 className="text-xl font-semibold mb-2">Interactive Results</h3>
+                            <p className="text-gray-400">
+                                Explore your interactive mindmap, zoom in on details, and share with classmates or colleagues.
+                            </p>
+                        </div>
+                    </motion.div>
+
+                    {/* User History Section (only shown when logged in) */}
+                    {session?.user && (
+                        <motion.div
+                            className="mt-16"
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.5, delay: 0.4 }}
+                        >
                             <Card className="bg-slate-800 border-slate-700">
                                 <CardHeader>
-                                    <CardTitle>Upload Your Study Material</CardTitle>
-                                    <CardDescription className="text-gray-400">
-                                        Upload a PDF file to generate a mindmap or concept map
-                                    </CardDescription>
+                                    <CardTitle className="flex items-center">
+                                        <History className="h-5 w-5 mr-2" />
+                                        Your Recent Mindmaps
+                                    </CardTitle>
+                                    <CardDescription className="text-gray-400">Access your previously generated mindmaps</CardDescription>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="space-y-6">
-                                        <div className="border-2 border-dashed border-slate-600 rounded-lg p-6 text-center hover:bg-slate-700/50 transition-colors cursor-pointer">
-                                            <input
-                                                type="file"
-                                                id="pdf-upload"
-                                                className="hidden"
-                                                accept=".pdf"
-                                                onChange={handleFileChange}
-                                                ref={fileInputRef}
-                                            />
-                                            <label htmlFor="pdf-upload" className="cursor-pointer">
-                                                <FileUp className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                                                <p className="text-lg font-medium mb-1">
-                                                    {file ? file.name : "Drag & drop or click to upload"}
-                                                </p>
-                                                <p className="text-sm text-gray-400">Supports PDF files up to 10MB</p>
-                                            </label>
-                                        </div>
-
-                                        {file && (
-                                            <div className="flex items-center justify-between p-3 bg-slate-700/50 rounded-lg">
-                                                <div className="flex items-center">
-                                                    <FileUp className="h-5 w-5 mr-2 text-blue-400" />
-                                                    <span className="text-sm truncate max-w-[200px]">{file.name}</span>
-                                                </div>
-                                                {uploadStatus === "success" && <CheckCircle2 className="h-5 w-5 text-green-500" />}
-                                            </div>
-                                        )}
-
-                                        {uploadStatus === "uploading" && !isUploading && (
-                                            <div className="space-y-2">
-                                                <div className="flex justify-between text-sm">
-                                                    <span>Uploading...</span>
-                                                    <span>{uploadProgress}%</span>
-                                                </div>
-                                                <Progress value={uploadProgress} className="h-2" />
-                                            </div>
-                                        )}
-                                    </div>
+                                    <p className="text-center text-gray-400 py-6">
+                                        Your generated mindmaps will appear here for easy access
+                                    </p>
                                 </CardContent>
-                                <CardFooter className="flex justify-between">
-                                    <Button
-                                        variant="outline"
-                                        onClick={handleUpload}
-                                        disabled={!file || isUploading || uploadStatus === "success"}
-                                    >
-                                        Upload
-                                    </Button>
-                                    <Button
-                                        onClick={handleGenerate}
-                                        disabled={uploadStatus !== "success" || isGenerating}
-                                        className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                                    >
-                                        Generate Mindmap
-                                    </Button>
-                                </CardFooter>
                             </Card>
-                        </TabsContent>
-
-                        <TabsContent value="generated">
-                            {generatedVisualization && mindmapData && (
-                                <div className="space-y-6">
-                                    <Card className="bg-slate-800 border-slate-700">
-                                        <CardHeader>
-                                            <div className="flex justify-between items-center">
-                                                <div>
-                                                    <CardTitle>{mindmapData.root.text}</CardTitle>
-                                                    <CardDescription className="text-gray-400">
-                                                        Generated from {file?.name || "your PDF"}
-                                                    </CardDescription>
-                                                </div>
-                                                <div className="flex space-x-2">
-                                                    {session?.user && !savedMindmapId && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            onClick={saveMindmapToDatabase}
-                                                            disabled={isSaving}
-                                                            className="flex items-center"
-                                                        >
-                                                            {isSaving ? (
-                                                                <>Saving...</>
-                                                            ) : (
-                                                                <>
-                                                                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                                                                    Save to Dashboard
-                                                                </>
-                                                            )}
-                                                        </Button>
-                                                    )}
-                                                    {savedMindmapId && (
-                                                        <Button
-                                                            variant="outline"
-                                                            size="sm"
-                                                            disabled={true}
-                                                            className="flex items-center text-green-500"
-                                                        >
-                                                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                                                            Saved to Dashboard
-                                                        </Button>
-                                                    )}
-                                                    <Button variant="outline" size="sm" onClick={downloadAsPDF} className="flex items-center">
-                                                        <Download className="h-4 w-4 mr-2" />
-                                                        Export as PDF
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent>
-                                            {/* User Guide */}
-                                            <div className="mb-6 p-4 bg-slate-700/30 rounded-lg border border-slate-600">
-                                                <div className="flex items-start space-x-4">
-                                                    <div className="bg-blue-500 rounded-full p-2">
-                                                        <HelpCircle className="h-5 w-5" />
-                                                    </div>
-                                                    <div>
-                                                        <h3 className="font-medium text-lg mb-2">How to Use Your Mindmap</h3>
-                                                        <ul className="space-y-2 text-sm text-gray-300">
-                                                            <li className="flex items-center">
-                                                                <ChevronRight className="h-4 w-4 mr-2 text-blue-400" />
-                                                                <span>
-                                                                    <strong>Expand/Collapse:</strong> Click on any node with a chevron to expand or
-                                                                    collapse its children
-                                                                </span>
-                                                            </li>
-                                                            <li className="flex items-center">
-                                                                <ChevronDown className="h-4 w-4 mr-2 text-blue-400" />
-                                                                <span>
-                                                                    <strong>Expand All:</strong> Use the "Expand All" button to see the complete mindmap
-                                                                </span>
-                                                            </li>
-                                                            <li className="flex items-center">
-                                                                <Download className="h-4 w-4 mr-2 text-blue-400" />
-                                                                <span>
-                                                                    <strong>Export:</strong> Download your mindmap as PDF for sharing or printing
-                                                                </span>
-                                                            </li>
-                                                        </ul>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            <div ref={mindmapContainerRef}>
-                                                <MindMap data={mindmapData} theme="blue" expanded={false} />
-                                            </div>
-                                        </CardContent>
-                                        <CardFooter>
-                                            <div className="w-full">
-                                                <div className="flex justify-between items-center mb-4">
-                                                    <h3 className="font-medium">Visualization Details</h3>
-                                                </div>
-                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <div className="p-3 bg-slate-700/30 rounded-lg">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center">
-                                                                <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                                                                <span>Type</span>
-                                                            </div>
-                                                            <span className="text-sm text-gray-300">Mindmap</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="p-3 bg-slate-700/30 rounded-lg">
-                                                        <div className="flex items-center justify-between">
-                                                            <div className="flex items-center">
-                                                                <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                                                                <span>Nodes</span>
-                                                            </div>
-                                                            <span className="text-sm text-gray-300">{countNodes(mindmapData.root)}</span>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </CardFooter>
-                                    </Card>
-
-                                    <div className="flex justify-center">
-                                        <Button
-                                            onClick={() => {
-                                                setFile(null)
-                                                setUploadStatus("idle")
-                                                setGeneratedVisualization(false)
-                                                setMindmapData(null)
-                                                setActiveTab("upload")
-                                            }}
-                                            className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-                                        >
-                                            Generate New Mindmap
-                                        </Button>
-                                    </div>
-                                </div>
-                            )}
-                        </TabsContent>
-                    </Tabs>
+                        </motion.div>
+                    )}
                 </div>
             </main>
 
@@ -819,16 +627,3 @@ export default function FlowchartGeneratorPage() {
         </div>
     )
 }
-
-// Helper function to count total nodes in the mindmap
-function countNodes(node: MindMapNode): number {
-    let count = 1 // Count the node itself
-
-    if (node.children && node.children.length > 0) {
-        // Add the count of all children
-        count += node.children.reduce((sum, child) => sum + countNodes(child), 0)
-    }
-
-    return count
-}
-

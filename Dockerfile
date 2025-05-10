@@ -1,39 +1,17 @@
-FROM node:18-alpine AS base
-
-FROM base AS deps
-RUN apk add --no-cache libc6-compat
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm ci
-
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
-COPY . .
-
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN npm run build
-
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV production
-ENV NEXT_TELEMETRY_DISABLED 1
-
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
-
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next ./.next
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/package.json ./package.json
-
-USER nextjs
+FROM node:21-alpine
 
 EXPOSE 3000
 
-ENV PORT 3000
+WORKDIR /app
 
-CMD ["npm", "start"]
+COPY . .
+
+RUN npm install -g npm@10.7.0
+
+RUN npm install
+
+RUN npm run build
+
+RUN rm -r src .eslintrc.json .gitignore Dockerfile tsconfig.json postcss.config.mjs README.md tailwind.config.ts types prisma
+
+CMD [ "npm", "run", "start"]
