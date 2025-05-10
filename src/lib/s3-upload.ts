@@ -1,11 +1,37 @@
 import AWS from "aws-sdk"
 
-// Configure AWS SDK
-AWS.config.update({
-    region: "ap-south-1",
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
-})
+// Initialize AWS with better credential handling for container environments
+const initializeAWS = (): boolean => {
+    try {
+        const region = process.env.AWS_REGION || "ap-south-1"
+        const credentials = new AWS.Credentials({
+            accessKeyId: process.env.AWS_ACCESS_KEY_ID || "",
+            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || ""
+        })
+        
+        AWS.config.update({
+            region,
+            credentials
+        })
+
+        // Validate credentials
+        if (!process.env.AWS_ACCESS_KEY_ID || !process.env.AWS_SECRET_ACCESS_KEY) {
+            console.error("AWS credentials not found in environment variables")
+            return false
+        }
+
+        // Validate bucket name
+        if (!process.env.AWS_BUCKET_NAME) {
+            console.error("AWS_BUCKET_NAME not found in environment variables")
+            return false
+        }
+        
+        return true
+    } catch (error) {
+        console.error("Error initializing AWS:", error)
+        return false
+    }
+}
 
 type UploadProgressCallback = (progress: number) => void
 
@@ -15,13 +41,15 @@ interface UploadResult {
     error?: string
 }
 
-/**
- * Uploads a file to AWS S3
- * @param file The file to upload
- * @param onProgress Optional callback for upload progress
- * @returns Promise with upload result
- */
 export async function uploadToS3(file: File, onProgress?: UploadProgressCallback): Promise<UploadResult> {
+    // Initialize AWS and validate configuration
+    if (!initializeAWS()) {
+        return {
+            success: false,
+            error: "AWS configuration failed. Check environment variables."
+        }
+    }
+    
     try {
         const s3 = new AWS.S3()
 
