@@ -3,8 +3,8 @@ import AWS from "aws-sdk"
 // Configure AWS SDK
 AWS.config.update({
     region: "ap-south-1",
-    accessKeyId: process.env.NEXT_PUBLIC_AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.NEXT_PUBLIC_AWS_SECRET_ACCESS_KEY,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID as string,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY as string,
 })
 
 type UploadProgressCallback = (progress: number) => void
@@ -30,7 +30,7 @@ export async function uploadToS3(file: File, onProgress?: UploadProgressCallback
 
         // Set up upload parameters
         const params = {
-            Bucket: "topperninja-backend",
+            Bucket: process.env.AWS_BUCKET_NAME as string,
             Key: fileName,
             Body: file,
             ContentType: file.type,
