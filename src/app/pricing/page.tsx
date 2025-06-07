@@ -10,6 +10,8 @@ import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { useSession } from "next-auth/react";
 import toast from "react-hot-toast";
+import { QuickPaymentModal } from "@/components/ui/quick-payment-modal";
+import Script from "next/script";
 
 declare global {
   interface Window {
@@ -96,6 +98,8 @@ function PricingContent() {
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
   const searchParams = useSearchParams();
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null);
+  const [isQuickPaymentModalOpen, setIsQuickPaymentModalOpen] = useState(false);
 
   // Check if user was redirected from auth
   const reason = searchParams.get("reason");
@@ -124,6 +128,8 @@ function PricingContent() {
     // Show toast if user was redirected from auth
     if (reason === "account_required") {
       toast.error("Account not found. Please purchase coins to create your account.");
+    } else if (reason === "account_created") {
+      toast.success("Your account has been created! Please check your email for login details.");
     }
   }, [reason]);
 
@@ -133,78 +139,76 @@ function PricingContent() {
       return;
     }
 
-    setIsProcessing(plan.id);
+    // For authenticated users, proceed with standard flow
+    if (session) {
+      setIsProcessing(plan.id);
 
-    try {
-      // Create order without authentication requirement
-      const orderResponse = await fetch("/api/create-razorpay-order", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          amount: plan.price * 100, // Convert to paise
-          currency: "INR",
-          coins: plan.coins,
-          planName: plan.name,
-          // Include user data if signed in, otherwise let webhook handle account creation
-          userEmail: session?.user?.email || null,
-          userName: session?.user?.name || null
-        }),
-      });
+      try {
+        // Create order with authentication
+        const orderResponse = await fetch("/api/create-razorpay-order", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            amount: plan.price * 100, // Convert to paise
+            currency: "INR",
+            coins: plan.coins,
+            planName: plan.name
+          }),
+        });
 
-      if (!orderResponse.ok) {
-        throw new Error("Failed to create order");
-      }
+        if (!orderResponse.ok) {
+          throw new Error("Failed to create order");
+        }
 
-      const order = await orderResponse.json();
+        const order = await orderResponse.json();
 
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: order.amount,
-        currency: order.currency,
-        name: "NotesInstitute",
-        description: `${plan.name} - ${plan.coins} Coins`,
-        order_id: order.id,
-        prefill: {
-          name: session?.user?.name || "",
-          email: session?.user?.email || "",
-        },
-        notes: {
-          email: session?.user?.email || "",
-          name: session?.user?.name || "",
-          coins: plan.coins,
-          planId: plan.id,
-          isExistingUser: session ? "true" : "false"
-        },
-        theme: {
-          color: "#6366f1",
-        },
-        handler: function (response: any) {
-          if (session) {
+        const options = {
+          key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+          amount: order.amount,
+          currency: order.currency,
+          name: "Notes Academy",
+          description: `${plan.name} - ${plan.coins} Coins`,
+          order_id: order.id,
+          prefill: {
+            name: session?.user?.name || "",
+            email: session?.user?.email || "",
+          },
+          notes: {
+            email: session?.user?.email || "",
+            name: session?.user?.name || "",
+            coins: plan.coins,
+            planId: plan.id,
+            isNewUser: "false"
+          },
+          theme: {
+            color: "#6366f1",
+          },
+          handler: function (response: any) {
             toast.success("Payment successful! Coins will be credited shortly.");
             // Refresh user data if logged in
             window.location.reload();
-          } else {
-            toast.success("Payment successful! Your account is being created. Please check your email for login details.");
-            // Redirect to auth page for new users
-            window.location.href = "/auth?message=account_created";
-          }
-        },
-        modal: {
-          ondismiss: function () {
-            setIsProcessing(null);
-            toast.error("Payment cancelled");
           },
-        },
-      };
+          modal: {
+            ondismiss: function () {
+              setIsProcessing(null);
+              toast.error("Payment cancelled");
+            },
+          },
+        };
 
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (error) {
-      console.error("Payment error:", error);
-      toast.error("Failed to initiate payment. Please try again.");
-      setIsProcessing(null);
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+      } catch (error) {
+        console.error("Payment error:", error);
+        toast.error("Failed to initiate payment. Please try again.");
+        setIsProcessing(null);
+      }
+    } else {
+      // For non-authenticated users, show quick payment modal
+      setSelectedPlan(plan);
+      setIsQuickPaymentModalOpen(true);
     }
   };
 
@@ -229,6 +233,20 @@ function PricingContent() {
 
   return (
     <main className="container mx-auto px-4 py-16">
+      {/* Load Razorpay script */}
+      <Script
+        src="https://checkout.razorpay.com/v1/checkout.js"
+        onLoad={() => setRazorpayLoaded(true)}
+        onError={() => console.error("Failed to load Razorpay")}
+      />
+      
+      {/* Quick Payment Modal for unauthenticated users */}
+      <QuickPaymentModal
+        isOpen={isQuickPaymentModalOpen}
+        onClose={() => setIsQuickPaymentModalOpen(false)}
+        plan={selectedPlan}
+      />
+
       <motion.div
         className="max-w-6xl mx-auto"
         initial={{ opacity: 0, y: 20 }}
@@ -354,7 +372,9 @@ function PricingContent() {
                           Processing...
                         </div>
                       ) : (
-                        `Purchase ${plan.coins} Coins - ₹${plan.price}`
+                        session ? 
+                        `Get ${plan.coins} Coins - ₹${plan.price}` : 
+                        `Buy Now - ₹${plan.price}`
                       )}
                     </Button>
                   </CardFooter>

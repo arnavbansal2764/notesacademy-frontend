@@ -7,12 +7,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { CreditCard, User, Mail, Phone, Coins, X } from "lucide-react"
-import { useSession } from "next-auth/react"
+import { CreditCard, User, Mail, Coins, X } from "lucide-react"
 import toast from "react-hot-toast"
 import { useRouter } from "next/navigation"
 
-interface PaymentModalProps {
+interface QuickPaymentModalProps {
   isOpen: boolean
   onClose: () => void
   plan: {
@@ -29,40 +28,44 @@ declare global {
   }
 }
 
-export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
-  const { data: session } = useSession()
+export function QuickPaymentModal({ isOpen, onClose, plan }: QuickPaymentModalProps) {
   const router = useRouter()
   const [isProcessing, setIsProcessing] = useState(false)
+  const [showEmbed, setShowEmbed] = useState(false)
   const [userDetails, setUserDetails] = useState({
-    name: session?.user?.name || "",
-    email: session?.user?.email || "",
-    phone: ""
+    name: "",
+    email: ""
   })
 
   const handleInputChange = (field: string, value: string) => {
     setUserDetails(prev => ({ ...prev, [field]: value }))
   }
 
+  const validateEmail = (email: string): boolean => {
+    const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return re.test(email);
+  };
+
   const handlePayment = async () => {
     if (!plan) return
 
     // Validate required fields
-    if (!userDetails.name || !userDetails.email || !userDetails.phone) {
+    if (!userDetails.name || !userDetails.email) {
       toast.error("Please fill in all required fields")
       return
     }
 
-    // Validate phone number
-    if (userDetails.phone.length < 10) {
-      toast.error("Please enter a valid phone number")
+    // Validate email
+    if (!validateEmail(userDetails.email)) {
+      toast.error("Please enter a valid email address")
       return
     }
 
     setIsProcessing(true)
 
     try {
-      // Create order
-      const orderResponse = await fetch("/api/create-order", {
+      // Create order without requiring authentication
+      const orderResponse = await fetch("/api/create-razorpay-order", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -70,13 +73,11 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
         body: JSON.stringify({
           amount: plan.price * 100, // Convert to paise
           currency: "INR",
-          receipt: `receipt_${Date.now()}`,
-          notes: {
-            plan: plan.name,
-            coins: plan.coins.toString(),
-            name: userDetails.name,
-            email: userDetails.email,
-          },
+          coins: plan.coins,
+          planName: plan.name,
+          userEmail: userDetails.email,
+          userName: userDetails.name,
+          isNewUser: true
         }),
       })
 
@@ -91,54 +92,28 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "Notes Academy",
-        description: `${plan.name} - ${plan.coins} Coins`,
+        name: "NotesInstitute",
+        description: `${plan!.name} - ${plan!.coins} Coins`,
         order_id: orderData.id,
-        prefill: {
-          name: userDetails.name,
-          email: userDetails.email,
-          contact: userDetails.phone,
-        },
-        theme: {
-          color: "#3B82F6",
-        },
-        handler: async function (response: any) {
-          try {
-            // Verify payment
-            const verifyResponse = await fetch("/api/verify-payment", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            })
-
-            if (verifyResponse.ok) {
-              toast.success(`Payment successful! ${plan.coins} coins added to your account.`)
-              onClose() // Close modal
-              
-              // Refresh the page to update coin balance
-              if (typeof window !== 'undefined') {
-                window.location.reload()
-              }
-            } else {
-              toast.error("Payment verification failed")
-            }
-          } catch (error) {
-            console.error("Payment verification error:", error)
-            toast.error("Payment verification failed")
-          }
+        prefill: { name: userDetails.name, email: userDetails.email },
+        notes: { name: userDetails.name, email: userDetails.email, coins: plan!.coins, planName: plan!.name, isNewUser: "true" },
+        theme: { color: "#3B82F6" },
+        handler(response: any) {
+          toast.success("Payment successful! Check your email for login details.")
+          setTimeout(() => router.push("/auth?message=account_created"), 2000)
         },
         modal: {
-          ondismiss: function () {
+          ondismiss() {
             setIsProcessing(false)
+            setShowEmbed(false)
             toast.error("Payment cancelled")
           },
         },
+      }
+
+      setShowEmbed(true)
+      ;(options as any).checkout = {
+        container: "#quick-rzp-embed-container"
       }
 
       const rzp = new window.Razorpay(options)
@@ -227,6 +202,9 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
               placeholder="Enter your email"
               required
             />
+            <p className="text-xs mt-1 text-blue-400">
+              We'll create your account with this email address
+            </p>
           </div>
         </div>
 
@@ -254,8 +232,16 @@ export function PaymentModal({ isOpen, onClose, plan }: PaymentModalProps) {
           </Button>
         </motion.div>
 
+        {/* embed checkout container */}
+        {showEmbed && (
+          <div
+            id="quick-rzp-embed-container"
+            className="mt-4 p-4 bg-white rounded shadow w-full h-auto"
+          />
+        )}
+
         <p className="text-xs text-gray-400 text-center mt-4">
-          Secure payment powered by Razorpay. Your payment information is encrypted and secure.
+          Secure payment powered by Razorpay. Your account will be automatically created after payment.
         </p>
       </div>
     </Modal>

@@ -4,23 +4,27 @@ import { authOptions } from "@/lib/authOptions";
 import Razorpay from "razorpay";
 
 const razorpay = new Razorpay({
-  key_id: "rzp_test_Z53yBZFgq4GkQL",
-  key_secret: "7QOE8jUm3IEuK7Y5IGGeeMGz",
+  key_id: process.env.RAZORPAY_KEY_ID || "rzp_test_Z53yBZFgq4GkQL",
+  key_secret: process.env.RAZORPAY_KEY_SECRET || "7QOE8jUm3IEuK7Y5IGGeeMGz",
 });
 
 export async function POST(req: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
-
-    if (!session?.user?.email) {
-      return NextResponse.json({ error: "Authentication required" }, { status: 401 });
-    }
-
     const body = await req.json();
-    const { amount, currency = "INR", coins, planName } = body;
+    const { amount, currency = "INR", coins, planName, userEmail, userName, isNewUser = false } = body;
 
     if (!amount || !coins) {
       return NextResponse.json({ error: "Amount and coins are required" }, { status: 400 });
+    }
+
+    // Check if we have user credentials - either from session or from request body
+    const session = await getServerSession(authOptions);
+    const email = session?.user?.email || userEmail;
+    const name = session?.user?.name || userName;
+    
+    // For non-authenticated users, email is required in the request body
+    if (!email && isNewUser) {
+      return NextResponse.json({ error: "Email is required for new users" }, { status: 400 });
     }
 
     // Create Razorpay order
@@ -29,10 +33,11 @@ export async function POST(req: NextRequest) {
       currency: currency,
       receipt: `receipt_${Date.now()}`,
       notes: {
-        email: session.user.email,
-        name: session.user.name || "",
+        email: email || "",
+        name: name || "",
         coins: coins.toString(),
-        planName: planName || ""
+        planName: planName || "",
+        isNewUser: isNewUser ? "true" : "false"
       }
     });
 

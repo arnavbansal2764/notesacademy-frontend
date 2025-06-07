@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import prisma from "@/lib/prisma";
-// import { sendPaymentConfirmationEmail } from "@/lib/emailService";
+import { sendPaymentConfirmationEmail } from "@/lib/emailService"; // <-- uncommented
 
 const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || "Paras%956";
 
@@ -155,8 +155,7 @@ export async function POST(req: NextRequest) {
             
             console.log(`Final verification - User ${user.id} now has ${updatedUser?.coins} coins in database`);
             
-            // Send payment confirmation email - DISABLED FOR NOW
-            /*
+            // Send payment confirmation email
             try {
                 await sendPaymentConfirmationEmail({
                     email: user.email,
@@ -170,10 +169,9 @@ export async function POST(req: NextRequest) {
                 });
                 console.log(`Confirmation email sent to ${user.email}`);
             } catch (emailError) {
-                console.error('Failed to send confirmation email:', emailError);
-                // Don't fail the payment process if email fails
+                console.error("Failed to send confirmation email:", emailError);
+                // don't interrupt webhook
             }
-            */
             
             return NextResponse.json({ 
                 message: "Payment processed successfully",
