@@ -4,8 +4,8 @@ import { authOptions } from "@/lib/authOptions";
 import Razorpay from "razorpay";
 
 const razorpay = new Razorpay({
-  key_id: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
+  key_id: "rzp_test_Z53yBZFgq4GkQL",
+  key_secret: "7QOE8jUm3IEuK7Y5IGGeeMGz",
 });
 
 export async function POST(req: NextRequest) {
