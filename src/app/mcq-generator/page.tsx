@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import toast from "react-hot-toast"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
 import confetti from "canvas-confetti"
 import { useSession } from "next-auth/react"
+import { CoinBalanceDisplay } from "@/components/ui/coin-balance-display"
 
 // Define types for our MCQ data
 interface MCQOption {
@@ -66,9 +67,37 @@ export default function MCQGeneratorPage() {
     const [isSaving, setIsSaving] = useState(false)
     const [savedResultId, setSavedResultId] = useState<string | null>(null)
 
+    // Add coin checking state
+    const [userCoins, setUserCoins] = useState<number | null>(null)
+    const [isCheckingCoins, setIsCheckingCoins] = useState(false)
+
     // Refs
     const fileInputRef = useRef<HTMLInputElement>(null)
     const tabsRef = useRef<HTMLButtonElement>(null)
+
+    // Fetch user coins when component mounts or session changes
+    useEffect(() => {
+        if (session?.user) {
+            fetchUserCoins()
+        }
+    }, [session])
+
+    // Function to fetch user coins
+    const fetchUserCoins = async () => {
+        try {
+            setIsCheckingCoins(true)
+            const response = await fetch('/api/user-profile')
+            if (response.ok) {
+                const data = await response.json()
+                setUserCoins(data.user?.coins || 0)
+            }
+        } catch (error) {
+            console.error('Error fetching user coins:', error)
+            toast.error('Failed to check coin balance')
+        } finally {
+            setIsCheckingCoins(false)
+        }
+    }
 
     // Handle file selection
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -91,6 +120,23 @@ export default function MCQGeneratorPage() {
     // Handle file upload and MCQ generation
     const generateMCQs = async () => {
         if (!file) return
+
+        // Check if user is authenticated
+        if (!session?.user) {
+            toast.error("Please sign in to generate MCQs")
+            return
+        }
+
+        // Check coins before proceeding
+        if (userCoins === null) {
+            toast.error("Unable to check coin balance. Please try again.")
+            return
+        }
+
+        if (userCoins < 1) {
+            toast.error("Insufficient coins! You need 1 coin to generate MCQs.")
+            return
+        }
 
         try {
             // Step 1: Upload file to S3
@@ -125,6 +171,10 @@ export default function MCQGeneratorPage() {
 
             if (!response.ok) {
                 const errorData = await response.json()
+                if (response.status === 402) {
+                    // Insufficient coins
+                    throw new Error(errorData.error || "Insufficient coins")
+                }
                 throw new Error(errorData.error || "Failed to generate MCQs")
             }
 
@@ -143,7 +193,7 @@ export default function MCQGeneratorPage() {
 
             setIsGenerating(false)
 
-            toast.success(`${data.questions.length} questions generated!`)
+            toast.success(`${data.questions.length} questions generated! Remaining coins: ${data.remainingCoins}`)
 
             // Automatically switch to the quiz tab
             setActiveTab("generated")
@@ -511,6 +561,15 @@ export default function MCQGeneratorPage() {
                                                             ) : null}
                                                         </div>
 
+                                                        {/* Coin Balance Display */}
+                                                        {session?.user && (
+                                                            <CoinBalanceDisplay
+                                                                coins={userCoins}
+                                                                requiredCoins={1}
+                                                                isLoading={isCheckingCoins}
+                                                            />
+                                                        )}
+
                                                         {uploadStatus === "uploading" && !isUploading && (
                                                             <motion.div
                                                                 className="space-y-2"
@@ -533,10 +592,12 @@ export default function MCQGeneratorPage() {
                                     <CardFooter className="flex justify-end">
                                         <Button
                                             onClick={generateMCQs}
-                                            disabled={!file || isUploading || isGenerating}
+                                            disabled={!file || isUploading || isGenerating || !session?.user || (userCoins !== null && userCoins < 1)}
                                             className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
                                         >
-                                            Generate MCQs
+                                            {!session?.user ? "Sign In Required" : 
+                                             userCoins !== null && userCoins < 1 ? "Insufficient Coins" : 
+                                             "Generate MCQs"}
                                         </Button>
                                     </CardFooter>
                                 </Card>

@@ -74,8 +74,8 @@ export default function SignInForm() {
       const data = await response.json();
       
       if (!response.ok) {
-        // User doesn't exist
-        toast.error(data.message || "Email not found");
+        // User doesn't exist, redirect to pricing
+        router.push(`/pricing?reason=account_required&email=${encodeURIComponent(email)}`);
         return;
       }
       
@@ -130,6 +130,7 @@ export default function SignInForm() {
     }
     
     try {
+      // The redirect URL will be handled by the signIn callback
       await signIn("google", { callbackUrl: "/" });
     } catch (error) {
       console.error("Google sign in error:", error);

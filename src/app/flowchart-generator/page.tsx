@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import toast, { Toaster } from "react-hot-toast"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { CoinBalanceDisplay } from "@/components/ui/coin-balance-display"
 
 export default function FlowchartGeneratorPage() {
     const router = useRouter()
@@ -35,8 +36,51 @@ export default function FlowchartGeneratorPage() {
     const [mindmapTitle, setMindmapTitle] = useState<string>("")
     const [currentStep, setCurrentStep] = useState<"upload" | "processing" | "result" | "error">("upload")
 
+    // Add coin checking state
+    const [userCoins, setUserCoins] = useState<number | null>(null)
+    const [isCheckingCoins, setIsCheckingCoins] = useState(false)
+
     // Refs
     const fileInputRef = useRef<HTMLInputElement>(null)
+
+    // Fetch user coins when component mounts or session changes
+    useEffect(() => {
+        if (session?.user) {
+            fetchUserCoins()
+        }
+    }, [session])
+
+    // Listen for coin balance updates from payment
+    useEffect(() => {
+        const handleCoinBalanceUpdate = () => {
+            if (session?.user) {
+                fetchUserCoins()
+            }
+        }
+
+        window.addEventListener('coinBalanceUpdated', handleCoinBalanceUpdate)
+        
+        return () => {
+            window.removeEventListener('coinBalanceUpdated', handleCoinBalanceUpdate)
+        }
+    }, [session])
+
+    // Function to fetch user coins
+    const fetchUserCoins = async () => {
+        try {
+            setIsCheckingCoins(true)
+            const response = await fetch('/api/user-profile')
+            if (response.ok) {
+                const data = await response.json()
+                setUserCoins(data.user?.coins || 0)
+            }
+        } catch (error) {
+            console.error('Error fetching user coins:', error)
+            toast.error('Failed to check coin balance')
+        } finally {
+            setIsCheckingCoins(false)
+        }
+    }
 
     // Handle file selection
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -58,6 +102,23 @@ export default function FlowchartGeneratorPage() {
     const handleGenerateFlowchart = async () => {
         if (!file) {
             toast.error("Please select a PDF file first")
+            return
+        }
+
+        // Check if user is authenticated
+        if (!session?.user) {
+            toast.error("Please sign in to generate mindmaps")
+            return
+        }
+
+        // Check coins before proceeding
+        if (userCoins === null) {
+            toast.error("Unable to check coin balance. Please try again.")
+            return
+        }
+
+        if (userCoins < 1) {
+            toast.error("Insufficient coins! You need 1 coin to generate mindmaps.")
             return
         }
 
@@ -102,6 +163,10 @@ export default function FlowchartGeneratorPage() {
             if (!response.ok) {
                 toast.dismiss(generatingToastId)
                 const errorData = await response.json()
+                if (response.status === 402) {
+                    // Insufficient coins
+                    throw new Error(errorData.error || "Insufficient coins")
+                }
                 throw new Error(errorData.error || "Failed to generate mindmap")
             }
 
@@ -117,7 +182,7 @@ export default function FlowchartGeneratorPage() {
 
             setIsGenerating(false)
 
-            toast.success("Mindmap generated successfully!", {
+            toast.success(`Mindmap generated successfully! Remaining coins: ${data.remainingCoins}`, {
                 id: generatingToastId,
             })
 
@@ -282,18 +347,29 @@ export default function FlowchartGeneratorPage() {
                                                 </motion.div>
                                             )}
 
+                                            {/* Coin Balance Display */}
+                                            {session?.user && file && (
+                                                <CoinBalanceDisplay
+                                                    coins={userCoins}
+                                                    requiredCoins={1}
+                                                    isLoading={isCheckingCoins}
+                                                />
+                                            )}
+
                                             <motion.div
                                                 className="flex flex-col sm:flex-row justify-center gap-4 pt-4"
                                                 variants={itemVariants}
                                             >
                                                 <Button
                                                     onClick={handleGenerateFlowchart}
-                                                    disabled={!file}
+                                                    disabled={!file || !session?.user || (session?.user && userCoins !== null && userCoins < 1)}
                                                     className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600"
                                                     size="lg"
                                                 >
                                                     <FileUp className="mr-2 h-4 w-4" />
-                                                    Generate Mindmap
+                                                    {!session?.user ? "Sign In Required" : 
+                                                     userCoins !== null && userCoins < 1 ? "Insufficient Coins" : 
+                                                     "Generate Mindmap"}
                                                 </Button>
                                                 <Button variant="outline" size="lg" onClick={loadSampleData}>
                                                     View Sample

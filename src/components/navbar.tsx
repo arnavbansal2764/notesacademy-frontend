@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X, LogOut, LayoutDashboard, BrainCircuit } from "lucide-react"
+import { Menu, X, LogOut, LayoutDashboard, BrainCircuit, User, ChevronDown } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import {
     DropdownMenu,
@@ -15,10 +15,13 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
+import { motion, AnimatePresence } from "framer-motion"
 
 export default function Navbar() {
     const [isMenuOpen, setIsMenuOpen] = useState(false)
     const [scrolled, setScrolled] = useState(false)
+    const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+    const [userCoins, setUserCoins] = useState<number | null>(null)
     const { data: session, status } = useSession()
     const router = useRouter()
     const isAuthenticated = status === "authenticated"
@@ -48,6 +51,11 @@ export default function Navbar() {
         router.push("/auth")
     }
 
+    const handleNavigation = (path: string) => {
+        router.push(path)
+        setIsMenuOpen(false)
+    }
+
     // Get user initials for avatar fallback
     const getUserInitials = () => {
         if (!session?.user?.name) return "NA"
@@ -57,6 +65,25 @@ export default function Navbar() {
             .join("")
             .toUpperCase()
             .substring(0, 2)
+    }
+
+    // Fetch user coins when session is available
+    useEffect(() => {
+        if (session?.user) {
+            fetchUserCoins()
+        }
+    }, [session])
+
+    const fetchUserCoins = async () => {
+        try {
+            const response = await fetch('/api/user-profile')
+            if (response.ok) {
+                const data = await response.json()
+                setUserCoins(data.user?.coins || 0)
+            }
+        } catch (error) {
+            console.error('Error fetching user coins:', error)
+        }
     }
 
     return (
@@ -71,26 +98,26 @@ export default function Navbar() {
                             <BrainCircuit className="h-5 w-5 text-white" />
                         </div>
                         <span className="font-bold text-2xl bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">
-                            NotesAcademy
+                            NotesInstitute
                         </span>
                     </Link>
 
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center space-x-8">
-                        <Link
-                            href="/mcq-generator"
+                        <button
+                            onClick={() => handleNavigation("/mcq-generator")}
                             className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
                         >
                             MCQ Generator
-                        </Link>
-                        <Link
-                            href="/subjective-qa"
+                        </button>
+                        <button
+                            onClick={() => handleNavigation("/subjective-qa")}
                             className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
                         >
                             Subjective Q&A
-                        </Link>
-                        <Link
-                            href="/flowchart-generator"
+                        </button>
+                        <button
+                            onClick={() => handleNavigation("/flowchart-generator")}
                             className="text-sm font-medium text-gray-300 hover:text-white transition-colors group"
                         >
                             <span className="relative">
@@ -101,46 +128,64 @@ export default function Navbar() {
                                     </Badge> */}
                                 </span>
                             </span>
+                        </button>
+                        <Link
+                            href="/pricing"
+                            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                        >
+                            Pricing
                         </Link>
 
                         {isAuthenticated ? (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                                        <Avatar className="h-9 w-9 border-2 border-white/20">
-                                            <AvatarImage src={session.user.image || ""} alt={session.user.name || "User"} />
-                                            <AvatarFallback className="bg-gradient-to-r from-purple-500 to-blue-600">
-                                                {getUserInitials()}
-                                            </AvatarFallback>
-                                        </Avatar>
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent className="w-56 bg-slate-800 border border-slate-700" align="end" forceMount>
-                                    <div className="flex items-center justify-start gap-2 p-2">
-                                        <div className="flex flex-col space-y-1 leading-none">
-                                            {session.user.name && <p className="font-medium">{session.user.name}</p>}
-                                            {session.user.email && (
-                                                <p className="w-[200px] truncate text-sm text-muted-foreground">{session.user.email}</p>
-                                            )}
-                                        </div>
+                            <div className="flex items-center gap-4">
+                                {/* Coins Display */}
+                                {userCoins !== null && (
+                                    <div className="flex items-center bg-slate-800 px-3 py-1 rounded-full">
+                                        <span className="text-lg mr-1">🪙</span>
+                                        <span className="text-yellow-400 font-medium">{userCoins}</span>
                                     </div>
-                                    <DropdownMenuSeparator className="bg-slate-700" />
-                                    <DropdownMenuItem asChild className="focus:bg-slate-700">
-                                        <Link href="/dashboard" className="cursor-pointer flex items-center">
-                                            <LayoutDashboard className="mr-2 h-4 w-4" />
-                                            <span>Dashboard</span>
-                                        </Link>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator className="bg-slate-700" />
-                                    <DropdownMenuItem
-                                        className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-slate-700"
-                                        onClick={handleSignOut}
+                                )}
+                                
+                                {/* User Dropdown */}
+                                <div className="relative">
+                                    <button
+                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                                        className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
                                     >
-                                        <LogOut className="mr-2 h-4 w-4" />
-                                        <span>Sign out</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
+                                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-medium">
+                                            {session.user.name?.charAt(0)?.toUpperCase() || "U"}
+                                        </div>
+                                        <span className="hidden lg:block">{session.user.name}</span>
+                                        <ChevronDown className="h-4 w-4" />
+                                    </button>
+
+                                    <AnimatePresence>
+                                        {isDropdownOpen && (
+                                            <motion.div
+                                                initial={{ opacity: 0, y: -10 }}
+                                                animate={{ opacity: 1, y: 0 }}
+                                                exit={{ opacity: 0, y: -10 }}
+                                                className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg border border-slate-700 py-1"
+                                            >
+                                                <Link
+                                                    href="/dashboard"
+                                                    className="flex items-center px-4 py-2 text-gray-300 hover:bg-slate-700 hover:text-white transition-colors"
+                                                >
+                                                    <User className="h-4 w-4 mr-2" />
+                                                    Dashboard
+                                                </Link>
+                                                <button
+                                                    onClick={() => signOut()}
+                                                    className="flex items-center w-full px-4 py-2 text-gray-300 hover:bg-slate-700 hover:text-white transition-colors"
+                                                >
+                                                    <LogOut className="h-4 w-4 mr-2" />
+                                                    Sign Out
+                                                </button>
+                                            </motion.div>
+                                        )}
+                                    </AnimatePresence>
+                                </div>
+                            </div>
                         ) : (
                             <Button
                                 className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 shadow-md shadow-purple-500/20"
@@ -160,79 +205,79 @@ export default function Navbar() {
                 </div>
 
                 {/* Mobile Navigation */}
-                {isMenuOpen && (
-                    <div className="md:hidden pt-4 pb-2 space-y-4 animate-in slide-in-from-top-5 duration-300">
-                        <Link
-                            href="/mcq-generator"
-                            className="block text-gray-300 hover:text-white transition-colors py-2"
-                            onClick={() => setIsMenuOpen(false)}
+                <AnimatePresence>
+                    {isMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            className="md:hidden border-t border-slate-800"
                         >
-                            MCQ Generator
-                        </Link>
-                        <Link
-                            href="/subjective-qa"
-                            className="block text-gray-300 hover:text-white transition-colors py-2"
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            Subjective Q&A
-                        </Link>
-                        <Link
-                            href="/flowchart-generator"
-                            className="flex items-center text-gray-300 hover:text-white transition-colors py-2"
-                            onClick={() => setIsMenuOpen(false)}
-                        >
-                            <span>Flowcharts & Mindmaps</span>
-                            {/* <Badge className="ml-2 text-xs bg-gradient-to-r from-indigo-400 to-purple-500 border-none px-1.5 py-0">
-                                New
-                            </Badge> */}
-                        </Link>
-
-                        {isAuthenticated ? (
-                            <div className="py-2 space-y-2">
-                                <div className="flex items-center space-x-2 pb-2">
-                                    <Avatar className="h-9 w-9 border-2 border-white/20">
-                                        <AvatarImage src={session.user.image || ""} alt={session.user.name || "User"} />
-                                        <AvatarFallback className="bg-gradient-to-r from-purple-500 to-blue-600">
-                                            {getUserInitials()}
-                                        </AvatarFallback>
-                                    </Avatar>
-                                    <div>
-                                        <p className="font-medium text-white">{session.user.name}</p>
-                                        <p className="text-xs text-gray-300 truncate max-w-[200px]">{session.user.email}</p>
-                                    </div>
-                                </div>
+                            <div className="py-4 space-y-4">
+                                <button
+                                    onClick={() => handleNavigation("/mcq-generator")}
+                                    className="block text-gray-300 hover:text-white transition-colors"
+                                >
+                                    MCQ Generator
+                                </button>
+                                <button
+                                    onClick={() => handleNavigation("/subjective-qa")}
+                                    className="block text-gray-300 hover:text-white transition-colors"
+                                >
+                                    Subjective Q&A
+                                </button>
+                                <button
+                                    onClick={() => handleNavigation("/flowchart-generator")}
+                                    className="block text-gray-300 hover:text-white transition-colors"
+                                >
+                                    Mindmaps
+                                </button>
                                 <Link
-                                    href="/dashboard"
-                                    className="flex items-center text-gray-300 hover:text-white transition-colors py-2"
+                                    href="/pricing"
+                                    className="block text-gray-300 hover:text-white transition-colors"
                                     onClick={() => setIsMenuOpen(false)}
                                 >
-                                    <LayoutDashboard className="mr-2 h-4 w-4" />
-                                    <span>Dashboard</span>
+                                    Pricing
                                 </Link>
-                                <button
-                                    onClick={() => {
-                                        setIsMenuOpen(false)
-                                        handleSignOut()
-                                    }}
-                                    className="flex items-center w-full text-left text-red-400 hover:text-red-300 transition-colors py-2"
-                                >
-                                    <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Sign out</span>
-                                </button>
+                                
+                                {isAuthenticated ? (
+                                    <div className="pt-4 border-t border-slate-800 space-y-4">
+                                        {userCoins !== null && (
+                                            <div className="flex items-center">
+                                                <span className="text-lg mr-2">🪙</span>
+                                                <span className="text-yellow-400 font-medium">{userCoins} coins</span>
+                                            </div>
+                                        )}
+                                        <Link
+                                            href="/dashboard"
+                                            className="block text-gray-300 hover:text-white transition-colors"
+                                            onClick={() => setIsMenuOpen(false)}
+                                        >
+                                            Dashboard
+                                        </Link>
+                                        <button
+                                            onClick={() => {
+                                                signOut()
+                                                setIsMenuOpen(false)
+                                            }}
+                                            className="block text-gray-300 hover:text-white transition-colors"
+                                        >
+                                            Sign Out
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="pt-4 border-t border-slate-800">
+                                        <Link href="/auth" onClick={() => setIsMenuOpen(false)}>
+                                            <Button variant="outline" className="w-full text-white border-white hover:bg-white hover:text-black">
+                                                Sign In
+                                            </Button>
+                                        </Link>
+                                    </div>
+                                )}
                             </div>
-                        ) : (
-                            <Button
-                                className="w-full bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 shadow-md shadow-purple-500/20"
-                                onClick={() => {
-                                    setIsMenuOpen(false)
-                                    router.push("/auth")
-                                }}
-                            >
-                                Get Started
-                            </Button>
-                        )}
-                    </div>
-                )}
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </nav>
     )

@@ -9,11 +9,12 @@ datasource db {
 
 model User {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  name          String
+  name          String?
   email         String    @unique
   password      String?   // Make password optional for Google auth
   googleId      String?   // Store Google ID when they authenticate with Google
   image         String?   // Profile image from Google
+  coins         Int       @default(0)  // Add this field
   payments      Payment[]
   subjectiveResults subjectiveresult[] 
   mcqResults    mcqresult[]  // Add this relation

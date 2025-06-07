@@ -6,12 +6,24 @@ import { FileUp, BookOpen, BrainCircuit, BarChart3, CheckCircle2, ArrowRight, Ch
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent } from "@/components/ui/card"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
+import { PaymentModal } from "@/components/ui/payment-modal"
+import Script from "next/script"
+import toast from "react-hot-toast"
 
-export default function EnhancedHeroSection() {
+export default function HeroSection() {
     const [scrolled, setScrolled] = useState(false)
     const [activeFeature, setActiveFeature] = useState(0)
     const [windowSize, setWindowSize] = useState({ width: 800, height: 600 }) // Default fallback values
     const [isMounted, setIsMounted] = useState(false)
+    const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
+    const [selectedPlan, setSelectedPlan] = useState<any>(null)
+    const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false)
+    const [isProcessing, setIsProcessing] = useState(false)
+    const [userCoins, setUserCoins] = useState<number | null>(null)
+    const { data: session } = useSession()
+    const router = useRouter()
 
     // Handle scroll effect for navbar
     useEffect(() => {
@@ -55,6 +67,167 @@ export default function EnhancedHeroSection() {
         return () => clearInterval(interval)
     }, [])
 
+    // Fetch user coins when component mounts or session changes
+    useEffect(() => {
+        if (session?.user) {
+            fetchUserCoins()
+        }
+    }, [session])
+
+    // Function to fetch user coins
+    const fetchUserCoins = async () => {
+        try {
+            const response = await fetch('/api/user-profile')
+            if (response.ok) {
+                const data = await response.json()
+                setUserCoins(data.user?.coins || 0)
+            }
+        } catch (error) {
+            console.error('Error fetching user coins:', error)
+        }
+    }
+
+    const handleGetStarted = () => {
+        if (session) {
+            router.push("/dashboard")
+        } else {
+            router.push("/auth")
+        }
+    }
+
+    const handleUploadPDF = () => {
+        if (session) {
+            router.push("/mcq-generator")
+        } else {
+            router.push("/auth")
+        }
+    }
+
+    const handleWatchDemo = () => {
+        // Scroll to product showcase section or open demo modal
+        const productSection = document.getElementById("product-showcase")
+        if (productSection) {
+            productSection.scrollIntoView({ behavior: "smooth" })
+        }
+    }
+
+    const handleQuickPurchase = async () => {
+        if (!session) {
+            router.push("/auth")
+            return
+        }
+
+        if (!isRazorpayLoaded) {
+            toast.error("Payment system is loading. Please try again in a moment.")
+            return
+        }
+
+        if (isProcessing) {
+            return
+        }
+
+        setIsProcessing(true)
+
+        try {
+            // Default starter plan
+            const plan = {
+                name: "Starter Pack",
+                price: 99,
+                coins: 10,
+                originalPrice: 149
+            }
+
+            // Create order
+            const orderResponse = await fetch("/api/create-order", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    amount: plan.price * 100, // Convert to paise
+                    currency: "INR",
+                    receipt: `receipt_${Date.now()}`,
+                    notes: {
+                        plan: plan.name,
+                        coins: plan.coins.toString(),
+                        name: session.user?.name || "",
+                        email: session.user?.email || "",
+                    },
+                }),
+            })
+
+            if (!orderResponse.ok) {
+                throw new Error("Failed to create order")
+            }
+
+            const orderData = await orderResponse.json()
+
+            // Initialize Razorpay
+            const options = {
+                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+                amount: orderData.amount,
+                currency: orderData.currency,
+                name: "Notes Academy",
+                description: `${plan.name} - ${plan.coins} Coins`,
+                order_id: orderData.id,
+                prefill: {
+                    name: session.user?.name || "",
+                    email: session.user?.email || "",
+                    contact: "",
+                },
+                theme: {
+                    color: "#3B82F6",
+                },
+                handler: async function (response: any) {
+                    try {
+                        // Verify payment
+                        const verifyResponse = await fetch("/api/verify-payment", {
+                            method: "POST",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                razorpay_order_id: response.razorpay_order_id,
+                                razorpay_payment_id: response.razorpay_payment_id,
+                                razorpay_signature: response.razorpay_signature,
+                            }),
+                        })
+
+                        if (verifyResponse.ok) {
+                            toast.success(`Payment successful! ${plan.coins} coins added to your account.`)
+                            
+                            // Refresh coin balance instead of full page reload
+                            await fetchUserCoins()
+                            
+                            // Optional: Also trigger a custom event for other components
+                            window.dispatchEvent(new CustomEvent('coinBalanceUpdated'))
+                        } else {
+                            toast.error("Payment verification failed")
+                        }
+                    } catch (error) {
+                        console.error("Payment verification error:", error)
+                        toast.error("Payment verification failed")
+                    } finally {
+                        setIsProcessing(false)
+                    }
+                },
+                modal: {
+                    ondismiss: function () {
+                        setIsProcessing(false)
+                        toast.error("Payment cancelled")
+                    },
+                },
+            }
+
+            const rzp = new window.Razorpay(options)
+            rzp.open()
+        } catch (error) {
+            console.error("Payment error:", error)
+            toast.error("Failed to initiate payment")
+            setIsProcessing(false)
+        }
+    }
+
     const features = [
         {
             title: "PDF Analysis",
@@ -88,6 +261,12 @@ export default function EnhancedHeroSection() {
 
     return (
         <>
+            <Script
+                src="https://checkout.razorpay.com/v1/checkout.js"
+                onLoad={() => setIsRazorpayLoaded(true)}
+                onError={() => console.error("Failed to load Razorpay")}
+            />
+
             <section className="relative min-h-screen pt-24 overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black">
                 {/* Animated Background Elements */}
                 <div className="absolute inset-0 overflow-hidden">
@@ -159,11 +338,17 @@ export default function EnhancedHeroSection() {
                             <Button
                                 size="lg"
                                 className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-lg px-8"
+                                onClick={handleGetStarted}
                             >
                                 Get Started Free
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
-                            <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 text-lg">
+                            <Button 
+                                size="lg" 
+                                variant="outline" 
+                                className="border-white/30 text-white hover:bg-white/10 text-lg"
+                                onClick={handleUploadPDF}
+                            >
                                 <FileUp className="mr-2 h-5 w-5" /> Upload PDF
                             </Button>
                         </motion.div>
@@ -362,17 +547,43 @@ export default function EnhancedHeroSection() {
                                 tools.
                             </p>
                             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <Button size="lg" className="bg-white text-black hover:bg-white/90 text-lg px-8">
-                                    Start Free Trial
+                                <Button 
+                                    size="lg" 
+                                    className="bg-white text-black hover:bg-white/90 text-lg px-8"
+                                    onClick={handleGetStarted}
+                                >
+                                    Get Started Now
                                 </Button>
-                                <Button size="lg" variant="outline" className="border-white/30 text-white hover:bg-white/10 text-lg">
+                                <Button 
+                                    size="lg" 
+                                    variant="outline" 
+                                    className="border-white/30 text-white hover:bg-white/10 text-lg"
+                                    onClick={handleWatchDemo}
+                                >
                                     Watch Demo
                                 </Button>
+                                {session && (
+                                    <Button 
+                                        size="lg" 
+                                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-lg px-8"
+                                        onClick={handleQuickPurchase}
+                                        disabled={!isRazorpayLoaded || isProcessing}
+                                    >
+                                        {isProcessing ? "Processing..." : "Quick Buy ₹99"}
+                                    </Button>
+                                )}
                             </div>
                         </div>
                     </motion.div>
                 </div>
             </section>
+
+            {/* Payment Modal */}
+            <PaymentModal
+                isOpen={isPaymentModalOpen}
+                onClose={() => setIsPaymentModalOpen(false)}
+                plan={selectedPlan}
+            />
         </>
     )
 }

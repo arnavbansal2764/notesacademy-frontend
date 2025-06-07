@@ -2,6 +2,7 @@ import HeroSection from "@/components/hero-section"
 import Navbar from "@/components/navbar"
 import ProductShowcase from "@/components/product-showcase"
 import Footer from "@/components/footer"
+import PricingSection from "@/components/pricing-section"
 
 export default function Home() {
   return (
@@ -9,6 +10,7 @@ export default function Home() {
       <Navbar />
       <HeroSection />
       <ProductShowcase />
+      <PricingSection />
       <Footer />
     </main>
   )

@@ -132,10 +132,10 @@ export default function GlobalError({
                         <p>
                             If this problem persists, please contact our support team at{" "}
                             <a
-                                href="mailto:support@notesacademy.com"
+                                href="mailto:support@notesinstitute.com"
                                 className="text-indigo-400 hover:text-indigo-300 transition-colors"
                             >
-                                support@notesacademy.com
+                                support@notesinstitute.com
                             </a>
                         </p>
                     </motion.div>

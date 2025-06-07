@@ -3,10 +3,47 @@ import { motion } from "framer-motion"
 import { FileText, List, HelpCircle, GitBranch } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 
 export default function ProductShowcase() {
+    const { data: session } = useSession()
+    const router = useRouter()
+
+    const handleMCQGenerator = () => {
+        if (session) {
+            router.push("/mcq-generator")
+        } else {
+            router.push("/auth")
+        }
+    }
+
+    const handleSubjectiveQA = () => {
+        if (session) {
+            router.push("/subjective-qa")
+        } else {
+            router.push("/auth")
+        }
+    }
+
+    const handleFlowchartGenerator = () => {
+        if (session) {
+            router.push("/flowchart-generator")
+        } else {
+            router.push("/auth")
+        }
+    }
+
+    const handleGetStarted = () => {
+        if (session) {
+            router.push("/dashboard")
+        } else {
+            router.push("/auth")
+        }
+    }
+
     return (
-        <section className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
+        <section id="product-showcase" className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
             <div className="container mx-auto">
                 <motion.h2
                     className="text-3xl md:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent"
@@ -46,7 +83,10 @@ export default function ProductShowcase() {
                                     <span>Includes answer explanations to enhance understanding</span>
                                 </li>
                             </ul>
-                            <Button className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700">
+                            <Button
+                                className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
+                                onClick={handleMCQGenerator}
+                            >
                                 Try MCQ Generator
                             </Button>
                         </motion.div>
@@ -177,7 +217,10 @@ export default function ProductShowcase() {
                                     <span>Covers complex topics requiring synthesis of information</span>
                                 </li>
                             </ul>
-                            <Button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700">
+                            <Button
+                                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                                onClick={handleSubjectiveQA}
+                            >
                                 Try Subjective Q&A
                             </Button>
                         </motion.div>
@@ -254,6 +297,7 @@ export default function ProductShowcase() {
                             <Button
                                 size="lg"
                                 className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600"
+                                onClick={handleFlowchartGenerator}
                             >
                                 Try Flowchart Generator
                             </Button>
@@ -298,6 +342,7 @@ export default function ProductShowcase() {
                         <Button
                             size="lg"
                             className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
+                            onClick={handleGetStarted}
                         >
                             Get Started Today
                         </Button>

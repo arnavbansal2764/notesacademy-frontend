@@ -61,6 +61,7 @@ interface User {
   name: string;
   email: string;
   image?: string;
+  coins: number;
   createdAt?: string;
 }
 
@@ -289,6 +290,13 @@ export default function DashboardPage() {
                           <p className="font-medium">{userData?.email}</p>
                         </div>
                         <div>
+                          <p className="text-xs text-gray-400">Coins</p>
+                          <p className="font-medium text-yellow-400 flex items-center">
+                            <span className="text-xl mr-1">🪙</span>
+                            {userData?.coins || 0}
+                          </p>
+                        </div>
+                        <div>
                           <p className="text-xs text-gray-400">Member Since</p>
                           <p className="font-medium">
                             {userData?.createdAt
@@ -353,6 +361,9 @@ export default function DashboardPage() {
                   <Card className="bg-slate-800 border-slate-700 md:col-span-3">
                     <CardHeader>
                       <CardTitle>Payment History</CardTitle>
+                      <CardDescription className="text-gray-400">
+                        Recent transactions (showing last 10)
+                      </CardDescription>
                     </CardHeader>
                     <CardContent>
                       {paymentHistory.length > 0 ? (
@@ -368,7 +379,7 @@ export default function DashboardPage() {
                               </tr>
                             </thead>
                             <tbody>
-                              {paymentHistory.map((payment) => (
+                              {paymentHistory.slice(0, 10).map((payment) => (
                                 <tr
                                   key={payment.id}
                                   className="border-b border-slate-700/50 hover:bg-slate-700/30"
@@ -378,26 +389,42 @@ export default function DashboardPage() {
                                   </td>
                                   <td className="p-2 font-mono text-sm">{payment.paymentId}</td>
                                   <td className="p-2">
-                                    {payment.amount / 100} {payment.currency.toUpperCase()}
+                                    ₹{payment.amount / 100} {payment.currency.toUpperCase()}
                                   </td>
                                   <td className="p-2 capitalize">{payment.paymentMethod}</td>
                                   <td className="p-2">
                                     <span
-                                      className={`px-2 py-1 rounded-full text-xs ${
-                                        payment.status === "completed" || payment.status === "succeeded"
-                                          ? "bg-green-900/50 text-green-400"
+                                      className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                        payment.status === "captured" || 
+                                        payment.status === "completed" || 
+                                        payment.status === "succeeded"
+                                          ? "bg-green-900/50 text-green-400 border border-green-600/30"
+                                          : payment.status === "failed"
+                                          ? "bg-red-900/50 text-red-400 border border-red-600/30"
                                           : payment.status === "pending"
-                                          ? "bg-yellow-900/50 text-yellow-400"
-                                          : "bg-red-900/50 text-red-400"
+                                          ? "bg-yellow-900/50 text-yellow-400 border border-yellow-600/30"
+                                          : "bg-gray-900/50 text-gray-400 border border-gray-600/30"
                                       }`}
                                     >
-                                      {payment.status}
+                                      {payment.status === "captured" ? "Success" : 
+                                       payment.status === "completed" ? "Success" :
+                                       payment.status === "succeeded" ? "Success" :
+                                       payment.status === "failed" ? "Failed" :
+                                       payment.status === "pending" ? "Pending" :
+                                       payment.status.charAt(0).toUpperCase() + payment.status.slice(1)}
                                     </span>
                                   </td>
                                 </tr>
                               ))}
                             </tbody>
                           </table>
+                          {paymentHistory.length > 10 && (
+                            <div className="text-center mt-4 pt-4 border-t border-slate-700">
+                              <p className="text-sm text-gray-400">
+                                Showing 10 of {paymentHistory.length} transactions
+                              </p>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="text-center py-8 text-gray-400">

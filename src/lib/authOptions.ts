@@ -69,8 +69,8 @@ export const authOptions: NextAuthOptions = {
         });
 
         if (!existingUser) {
-          // User doesn't exist in our database, reject sign in
-          return false;
+          // User doesn't exist in our database, redirect to pricing
+          return "/pricing?reason=account_required&email=" + encodeURIComponent(user.email);
         }
 
         // Update the user with Google ID if not already set
