@@ -1,12 +1,12 @@
 "use client"
 
 import { useSearchParams, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
 import { Button } from "@/components/ui/button"
 import { LayoutDashboard, RefreshCw } from "lucide-react"
 import JsonCrackEmbed from "@/components/JsonCrackEmbed"
 
-export default function ViewPage() {
+function ViewContent() {
     const router = useRouter()
     const searchParams = useSearchParams()
     const [jsonUrl, setJsonUrl] = useState<string>("")
@@ -45,7 +45,6 @@ export default function ViewPage() {
                         {title}
                     </h1>
                     <div>
-
                     <Button
                         onClick={handleGenerateAnother}
                         className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600"
@@ -69,5 +68,35 @@ export default function ViewPage() {
                 <JsonCrackEmbed jsonUrl={jsonUrl} className="w-full h-full" />
             </div>
         </div>
+    )
+}
+
+function LoadingFallback() {
+    return (
+        <div className="fixed inset-0 bg-slate-900 flex flex-col">
+            <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-slate-900 to-transparent p-4">
+                <div className="container mx-auto flex justify-between items-center">
+                    <div className="h-8 bg-slate-800 rounded animate-pulse w-48"></div>
+                    <div className="flex gap-4">
+                        <div className="h-10 w-48 bg-slate-800 rounded animate-pulse"></div>
+                        <div className="h-10 w-32 bg-slate-800 rounded animate-pulse"></div>
+                    </div>
+                </div>
+            </div>
+            <div className="flex-1 w-full h-full flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p>Loading mindmap...</p>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+export default function ViewPage() {
+    return (
+        <Suspense fallback={<LoadingFallback />}>
+            <ViewContent />
+        </Suspense>
     )
 }

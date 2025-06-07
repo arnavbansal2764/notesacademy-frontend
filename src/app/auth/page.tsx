@@ -1,14 +1,14 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import SignInForm from "@/components/auth/sign-in-page";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { CreditCard, ArrowRight, Info } from "lucide-react";
 
-export default function SignInPage() {
+function AuthContent() {
   const searchParams = useSearchParams();
 
   useEffect(() => {
@@ -20,7 +20,7 @@ export default function SignInPage() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-100 to-blue-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <>
       {/* Payment Notice Banner */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -72,6 +72,33 @@ export default function SignInPage() {
           Accounts are created automatically after your first purchase
         </p>
       </motion.div>
+    </>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <>
+      <div className="w-full max-w-md mb-6">
+        <div className="h-24 bg-slate-800 rounded-lg animate-pulse"></div>
+      </div>
+      <div className="w-full max-w-md">
+        <div className="h-96 bg-slate-800 rounded-lg animate-pulse"></div>
+      </div>
+      <div className="mt-6 text-center max-w-md">
+        <div className="h-4 bg-slate-800 rounded mb-2 animate-pulse"></div>
+        <div className="h-3 bg-slate-800 rounded animate-pulse"></div>
+      </div>
+    </>
+  );
+}
+
+export default function SignInPage() {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-purple-100 to-blue-100 dark:from-gray-900 dark:to-gray-800 p-4">
+      <Suspense fallback={<LoadingFallback />}>
+        <AuthContent />
+      </Suspense>
     </div>
   );
 }

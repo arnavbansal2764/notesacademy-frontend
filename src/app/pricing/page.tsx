@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import { Check, Star, Zap, Crown } from "lucide-react";
@@ -91,7 +91,7 @@ const pricingPlans: PricingPlan[] = [
   }
 ];
 
-export default function PricingPage() {
+function PricingContent() {
   const { data: session } = useSession();
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);
@@ -228,193 +228,219 @@ export default function PricingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
-      <Navbar />
-
-      <main className="container mx-auto px-4 py-16">
+    <main className="container mx-auto px-4 py-16">
+      <motion.div
+        className="max-w-6xl mx-auto"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        {/* Header */}
         <motion.div
-          className="max-w-6xl mx-auto"
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.5 }}
+        >
+          {reason === "account_required" && (
+            <motion.div
+              className="mb-6 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+            >
+              <p className="text-amber-400 font-medium">
+                {email ? `Account not found for ${email}` : "Account not found"}
+              </p>
+              <p className="text-amber-200 text-sm mt-1">
+                Purchase any package below to create your account and start using our AI tools.
+              </p>
+            </motion.div>
+          )}
+          
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+            {reason === "account_required" ? "Create Your Account" : "Choose Your Learning Package"}
+          </h1>
+          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
+            {reason === "account_required" 
+              ? "Get started with our AI-powered study tools by purchasing your first coin package."
+              : "Get coins to unlock AI-powered study tools. Generate MCQs, subjective questions, and interactive mindmaps from your PDFs."
+            }
+          </p>
+          <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
+            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span>Secure payments via Razorpay</span>
+            <span className="mx-2">•</span>
+            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+            <span>Instant coin delivery</span>
+            <span className="mx-2">•</span>
+            <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
+            <span>Account auto-creation</span>
+          </div>
+        </motion.div>
+
+        {/* Pricing Cards */}
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          {pricingPlans.map((plan) => {
+            const IconComponent = plan.icon;
+            const isPopular = plan.popular;
+
+            return (
+              <motion.div
+                key={plan.id}
+                variants={itemVariants}
+                className={`relative ${isPopular ? 'scale-105' : ''}`}
+              >
+                {isPopular && (
+                  <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
+                    <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-sm font-medium">
+                      Most Popular
+                    </div>
+                  </div>
+                )}
+
+                <Card className={`bg-slate-800 border-slate-700 h-full ${isPopular ? 'border-purple-500 shadow-lg shadow-purple-500/20' : ''}`}>
+                  <CardHeader className="text-center">
+                    <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${plan.gradient} flex items-center justify-center`}>
+                      <IconComponent className="h-8 w-8 text-white" />
+                    </div>
+                    <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
+                    <CardDescription className="text-gray-400">{plan.description}</CardDescription>
+                    
+                    <div className="mt-4">
+                      <div className="flex items-center justify-center gap-2 mb-2">
+                        <span className="text-4xl font-bold">₹{plan.price}</span>
+                        {plan.originalPrice && (
+                          <span className="text-lg text-gray-400 line-through">₹{plan.originalPrice}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-center gap-1 text-yellow-400">
+                        <span className="text-2xl">🪙</span>
+                        <span className="text-xl font-semibold">{plan.coins} Coins</span>
+                      </div>
+                      {plan.originalPrice && (
+                        <div className="text-sm text-green-400 font-medium">
+                          Save ₹{plan.originalPrice - plan.price}
+                        </div>
+                      )}
+                    </div>
+                  </CardHeader>
+
+                  <CardContent>
+                    <ul className="space-y-3">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-start gap-3">
+                          <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+                          <span className="text-gray-300">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+
+                  <CardFooter>
+                    <Button
+                      onClick={() => handlePurchase(plan)}
+                      disabled={isProcessing === plan.id || !razorpayLoaded}
+                      className={`w-full bg-gradient-to-r ${plan.gradient} hover:opacity-90 text-white font-medium py-3`}
+                    >
+                      {isProcessing === plan.id ? (
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          Processing...
+                        </div>
+                      ) : (
+                        `Purchase ${plan.coins} Coins - ₹${plan.price}`
+                      )}
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+        {/* FAQ Section */}
+        <motion.div
+          className="max-w-4xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ delay: 0.5, duration: 0.5 }}
         >
-          {/* Header */}
-          <motion.div
-            className="text-center mb-16"
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-          >
-            {reason === "account_required" && (
-              <motion.div
-                className="mb-6 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.1 }}
-              >
-                <p className="text-amber-400 font-medium">
-                  {email ? `Account not found for ${email}` : "Account not found"}
-                </p>
-                <p className="text-amber-200 text-sm mt-1">
-                  Purchase any package below to create your account and start using our AI tools.
-                </p>
-              </motion.div>
-            )}
-            
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-              {reason === "account_required" ? "Create Your Account" : "Choose Your Learning Package"}
-            </h1>
-            <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-              {reason === "account_required" 
-                ? "Get started with our AI-powered study tools by purchasing your first coin package."
-                : "Get coins to unlock AI-powered study tools. Generate MCQs, subjective questions, and interactive mindmaps from your PDFs."
-              }
-            </p>
-            <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
-              <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-              <span>Secure payments via Razorpay</span>
-              <span className="mx-2">•</span>
-              <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-              <span>Instant coin delivery</span>
-              <span className="mx-2">•</span>
-              <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-              <span>Account auto-creation</span>
-            </div>
-          </motion.div>
+          <h2 className="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-lg">How do coins work?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300">Each AI generation (MCQ, subjective Q&A, or mindmap) costs 1 coin. Purchase coins to unlock unlimited access to our AI tools.</p>
+              </CardContent>
+            </Card>
 
-          {/* Pricing Cards */}
-          <motion.div
-            className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            {pricingPlans.map((plan) => {
-              const IconComponent = plan.icon;
-              const isPopular = plan.popular;
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-lg">Do coins expire?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300">No! Your coins never expire. Use them whenever you need to generate study materials from your PDFs.</p>
+              </CardContent>
+            </Card>
 
-              return (
-                <motion.div
-                  key={plan.id}
-                  variants={itemVariants}
-                  className={`relative ${isPopular ? 'scale-105' : ''}`}
-                >
-                  {isPopular && (
-                    <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                      <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-full text-sm font-medium">
-                        Most Popular
-                      </div>
-                    </div>
-                  )}
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-lg">Is payment secure?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300">Yes! We use Razorpay for secure payments. Your payment information is encrypted and never stored on our servers.</p>
+              </CardContent>
+            </Card>
 
-                  <Card className={`bg-slate-800 border-slate-700 h-full ${isPopular ? 'border-purple-500 shadow-lg shadow-purple-500/20' : ''}`}>
-                    <CardHeader className="text-center">
-                      <div className={`w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-r ${plan.gradient} flex items-center justify-center`}>
-                        <IconComponent className="h-8 w-8 text-white" />
-                      </div>
-                      <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-                      <CardDescription className="text-gray-400">{plan.description}</CardDescription>
-                      
-                      <div className="mt-4">
-                        <div className="flex items-center justify-center gap-2 mb-2">
-                          <span className="text-4xl font-bold">₹{plan.price}</span>
-                          {plan.originalPrice && (
-                            <span className="text-lg text-gray-400 line-through">₹{plan.originalPrice}</span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-center gap-1 text-yellow-400">
-                          <span className="text-2xl">🪙</span>
-                          <span className="text-xl font-semibold">{plan.coins} Coins</span>
-                        </div>
-                        {plan.originalPrice && (
-                          <div className="text-sm text-green-400 font-medium">
-                            Save ₹{plan.originalPrice - plan.price}
-                          </div>
-                        )}
-                      </div>
-                    </CardHeader>
-
-                    <CardContent>
-                      <ul className="space-y-3">
-                        {plan.features.map((feature, index) => (
-                          <li key={index} className="flex items-start gap-3">
-                            <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
-                            <span className="text-gray-300">{feature}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </CardContent>
-
-                    <CardFooter>
-                      <Button
-                        onClick={() => handlePurchase(plan)}
-                        disabled={isProcessing === plan.id || !razorpayLoaded}
-                        className={`w-full bg-gradient-to-r ${plan.gradient} hover:opacity-90 text-white font-medium py-3`}
-                      >
-                        {isProcessing === plan.id ? (
-                          <div className="flex items-center gap-2">
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                            Processing...
-                          </div>
-                        ) : (
-                          `Purchase ${plan.coins} Coins - ₹${plan.price}`
-                        )}
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                </motion.div>
-              );
-            })}
-          </motion.div>
-
-          {/* FAQ Section */}
-          <motion.div
-            className="max-w-4xl mx-auto"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.5 }}
-          >
-            <h2 className="text-3xl font-bold text-center mb-8">Frequently Asked Questions</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-lg">How do coins work?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300">Each AI generation (MCQ, subjective Q&A, or mindmap) costs 1 coin. Purchase coins to unlock unlimited access to our AI tools.</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-lg">Do coins expire?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300">No! Your coins never expire. Use them whenever you need to generate study materials from your PDFs.</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-lg">Is payment secure?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300">Yes! We use Razorpay for secure payments. Your payment information is encrypted and never stored on our servers.</p>
-                </CardContent>
-              </Card>
-
-              <Card className="bg-slate-800 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-lg">Can I get a refund?</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-300">We offer refunds within 7 days of purchase if you haven't used any coins. Contact support for assistance.</p>
-                </CardContent>
-              </Card>
-            </div>
-          </motion.div>
+            <Card className="bg-slate-800 border-slate-700">
+              <CardHeader>
+                <CardTitle className="text-lg">Can I get a refund?</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-gray-300">We offer refunds within 7 days of purchase if you haven't used any coins. Contact support for assistance.</p>
+              </CardContent>
+            </Card>
+          </div>
         </motion.div>
-      </main>
+      </motion.div>
+    </main>
+  );
+}
+
+function LoadingFallback() {
+  return (
+    <main className="container mx-auto px-4 py-16">
+      <div className="max-w-6xl mx-auto">
+        <div className="text-center mb-16">
+          <div className="h-12 bg-slate-800 rounded-lg mb-4 animate-pulse"></div>
+          <div className="h-6 bg-slate-800 rounded-lg mb-8 animate-pulse"></div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="h-96 bg-slate-800 rounded-lg animate-pulse"></div>
+          ))}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function PricingPage() {
+  return (
+    <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+      <Navbar />
+      
+      <Suspense fallback={<LoadingFallback />}>
+        <PricingContent />
+      </Suspense>
 
       <Footer />
     </div>
