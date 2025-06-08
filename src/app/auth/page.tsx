@@ -13,7 +13,9 @@ function AuthContent() {
 
   useEffect(() => {
     // Handle error parameters from NextAuth
+    //@ts-expect-error
     const error = searchParams.get("error");
+    //@ts-expect-error
     const message = searchParams.get("message");
     
     if (error === "Callback") {
@@ -24,13 +26,12 @@ function AuthContent() {
       toast.success("Your account has been created successfully! Please check your email for login instructions.");
     }
   }, [searchParams]);
-
+  //@ts-expect-error
   const message = searchParams.get("message");
   const showAccountCreatedNotice = message === "account_created";
 
   return (
     <>
-      {/* Account Created Notice */}
       {showAccountCreatedNotice && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}

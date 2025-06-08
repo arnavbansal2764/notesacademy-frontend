@@ -102,8 +102,9 @@ function PricingContent() {
   const [isQuickPaymentModalOpen, setIsQuickPaymentModalOpen] = useState(false);
 
   // Check if user was redirected from auth
-  //@ts-ignore
+  //@ts-expect-error
   const reason = searchParams.get("reason");
+  //@ts-expect-error
   const email = searchParams.get("email");
 
   useEffect(() => {

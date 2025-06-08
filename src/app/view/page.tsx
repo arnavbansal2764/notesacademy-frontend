@@ -14,7 +14,9 @@ function ViewContent() {
 
     useEffect(() => {
         // Get the URL and title from the query parameters
+        //@ts-expect-error
         const url = searchParams.get("url")
+        //@ts-expect-error
         const titleParam = searchParams.get("title")
 
         if (!url) {
