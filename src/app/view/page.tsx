@@ -13,10 +13,8 @@ function ViewContent() {
     const [title, setTitle] = useState<string>("")
 
     useEffect(() => {
-        //@ts-expect-error
-        const url = searchParams.get("url")
-        //@ts-expect-error
-        const titleParam = searchParams.get("title")
+        const url = searchParams?.get("url") || null
+        const titleParam = searchParams?.get("title") || null
 
         if (!url) {
             // If no URL is provided, redirect back to the generator page

@@ -13,10 +13,8 @@ function AuthContent() {
 
   useEffect(() => {
     // Handle error parameters from NextAuth
-    //@ts-expect-error
-    const error = searchParams.get("error");
-    //@ts-expect-error
-    const message = searchParams.get("message");
+    const error = searchParams?.get("error");
+    const message = searchParams?.get("message");
     
     if (error === "Callback") {
       toast.error("Account not found. Please purchase coins to create your account.");
@@ -26,8 +24,8 @@ function AuthContent() {
       toast.success("Your account has been created successfully! Please check your email for login instructions.");
     }
   }, [searchParams]);
-  //@ts-expect-error
-  const message = searchParams.get("message");
+  
+  const message = searchParams?.get("message");
   const showAccountCreatedNotice = message === "account_created";
 
   return (
