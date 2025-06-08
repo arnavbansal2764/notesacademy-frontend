@@ -102,10 +102,10 @@ function PricingContent() {
   const [isQuickPaymentModalOpen, setIsQuickPaymentModalOpen] = useState(false);
 
   // Check if user was redirected from auth
-  //@ts-expect-error
-  const reason = searchParams.get("reason");
-  //@ts-expect-error
-  const email = searchParams.get("email");
+
+  const reason = searchParams?.get("reason");
+  
+  const email = searchParams?.get("email");
 
   useEffect(() => {
     // Load Razorpay script
