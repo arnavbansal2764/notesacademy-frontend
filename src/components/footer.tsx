@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Button } from "@/components/ui/button"
 
 export default function Footer() {
     return (
@@ -21,11 +22,21 @@ export default function Footer() {
                         <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
                             Contact
                         </Link>
-                        <Link href="/privacy" className="text-gray-400 hover:text-white transition-colors">
+                        <Link href="/privacy-policy" className="text-gray-400 hover:text-white transition-colors">
                             Privacy
+                        </Link>
+                        <Link href="/refund-policy" className="text-gray-400 hover:text-white transition-colors">
+                            Refund Policy
+                        </Link>
+                        <Link href="/terms-and-conditions" className="text-gray-400 hover:text-white transition-colors">
+                            Terms & Conditions
+                        </Link>
+                        <Link href="/contact" className="text-gray-400 hover:text-white transition-colors">
+                            Contact Us
                         </Link>
                     </div>
                 </div>
+
 
                 <div className="border-t border-slate-800 mt-6 pt-6 text-center text-gray-400 text-sm">
                     <p>&copy; {new Date().getFullYear()} NotesAcademy. All rights reserved.</p>
