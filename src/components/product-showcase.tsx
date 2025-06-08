@@ -52,7 +52,7 @@ export default function ProductShowcase() {
                     transition={{ duration: 0.8 }}
                     viewport={{ once: true }}
                 >
-                    Explore Our AI-Powered Learning Tools
+                    Explore Our AI-Powered Teaching Tools
                 </motion.h2>
 
                 {/* MCQ Generator */}
@@ -260,7 +260,7 @@ export default function ProductShowcase() {
                                 <li className="flex items-start">
                                     <GitBranch className="h-6 w-6 mr-3 text-indigo-400 flex-shrink-0 mt-0.5" />
                                     <div>
-                                        <h4 className="font-semibold text-lg">Visual Learning</h4>
+                                        <h4 className="font-semibold text-lg">Visual Teaching</h4>
                                         <p className="text-gray-300">
                                             Convert text-heavy content into visual diagrams that are easier to understand and remember
                                         </p>
@@ -318,7 +318,7 @@ export default function ProductShowcase() {
                                 />
                                 <div className="mt-4 text-center relative z-10">
                                     <h4 className="font-semibold">Neural Network Architecture Flowchart</h4>
-                                    <p className="text-sm text-gray-300">Generated from "Deep Learning Fundamentals" PDF</p>
+                                    <p className="text-sm text-gray-300">Generated from "Deep Teaching Fundamentals" PDF</p>
                                 </div>
                             </div>
                         </motion.div>
@@ -334,9 +334,9 @@ export default function ProductShowcase() {
                     className="text-center mt-20"
                 >
                     <div className="max-w-3xl mx-auto bg-gradient-to-r from-purple-900/50 to-blue-900/50 p-8 rounded-xl border border-purple-700/50 shadow-lg">
-                        <h3 className="text-2xl md:text-3xl font-bold mb-4">Ready to Transform Your Learning Experience?</h3>
+                        <h3 className="text-2xl md:text-3xl font-bold mb-4">Ready to Transform Your Teaching Experience?</h3>
                         <p className="text-gray-300 mb-6">
-                            Join thousands of students who are already using our platform to enhance their study efficiency and
+                            Join thousands of teacher who are already using our platform to enhance their teaching efficiency and their student's 
                             knowledge retention.
                         </p>
                         <Button

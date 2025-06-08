@@ -303,7 +303,7 @@ export default function HeroSection() {
                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
                             <Badge className="mb-4 px-3 py-1 bg-white/10 text-white border-none">
                                 <span className="animate-pulse mr-1 h-2 w-2 rounded-full bg-green-500 inline-block"></span>
-                                New AI Learning Platform
+                                New AI Teaching Platform
                             </Badge>
                         </motion.div>
 
@@ -314,7 +314,7 @@ export default function HeroSection() {
                             transition={{ duration: 0.6, delay: 0.2 }}
                         >
                             <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
-                                Transform Your Learning
+                                Transform Your Teaching
                             </span>
                             <br />
                             <span className="text-white">With AI-Powered Tools</span>
@@ -351,17 +351,6 @@ export default function HeroSection() {
                             >
                                 <FileUp className="mr-2 h-5 w-5" /> Upload PDF
                             </Button>
-                        </motion.div>
-
-                        <motion.div
-                            className="flex items-center justify-center gap-2 text-white/60 text-sm"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            transition={{ duration: 0.6, delay: 0.8 }}
-                        >
-                            <ChevronDown className="h-4 w-4 animate-bounce" />
-                            <span>Scroll to explore</span>
-                            <ChevronDown className="h-4 w-4 animate-bounce" />
                         </motion.div>
                     </div>
 
@@ -402,7 +391,7 @@ export default function HeroSection() {
                             </div>
 
                             <div className="space-y-4">
-                                <h3 className="text-xl font-semibold">Why students love us:</h3>
+                                <h3 className="text-xl font-semibold">Why teachers love us:</h3>
                                 <ul className="space-y-3">
                                     {benefitItems.map((item, index) => (
                                         <motion.li

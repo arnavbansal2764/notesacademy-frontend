@@ -10,6 +10,7 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import Script from "next/script"
 import toast from "react-hot-toast"
+import { QuickPaymentModal } from "@/components/ui/quick-payment-modal"
 
 declare global {
   interface Window {
@@ -42,7 +43,6 @@ const pricingPlans: PricingPlan[] = [
     features: [
       "5 AI-powered generations",
       "All core features",
-      "7-day result history",
       "Download & share"
     ]
   },
@@ -54,11 +54,10 @@ const pricingPlans: PricingPlan[] = [
     originalPrice: 396,
     icon: Star,
     gradient: "from-purple-500 to-pink-500",
-    description: "Most popular choice for students",
+    description: "Most popular choice for teachers",
     features: [
       "20 AI-powered generations",
       "Priority processing",
-      "30-day result history",
       "Email support"
     ],
     popular: true
@@ -71,10 +70,9 @@ const pricingPlans: PricingPlan[] = [
     originalPrice: 990,
     icon: Crown,
     gradient: "from-yellow-500 to-orange-500",
-    description: "Ultimate package for serious learners",
+    description: "Ultimate package for serious tutors",
     features: [
       "50 AI-powered generations",
-      "Unlimited history",
       "Premium support",
       "Early access to features"
     ]
@@ -89,6 +87,10 @@ export default function PricingSection() {
 
   // Add coin balance state
   const [userCoins, setUserCoins] = useState<number | null>(null)
+
+  // State for selected plan and quick payment modal
+  const [selectedPlan, setSelectedPlan] = useState<PricingPlan | null>(null)
+  const [isQuickPaymentModalOpen, setIsQuickPaymentModalOpen] = useState(false)
 
   // Fetch user coins when component mounts or session changes
   useEffect(() => {
@@ -112,7 +114,9 @@ export default function PricingSection() {
 
   const handlePlanSelect = async (plan: PricingPlan) => {
     if (!session) {
-      router.push("/auth")
+      // show quick‐payment modal instead of redirect
+      setSelectedPlan(plan)
+      setIsQuickPaymentModalOpen(true)
       return
     }
 
@@ -246,7 +250,11 @@ export default function PricingSection() {
         onLoad={() => setIsRazorpayLoaded(true)}
         onError={() => console.error("Failed to load Razorpay")}
       />
-    
+      <QuickPaymentModal
+        isOpen={isQuickPaymentModalOpen}
+        onClose={() => setIsQuickPaymentModalOpen(false)}
+        plan={selectedPlan}
+      />
       <section className="py-20 px-4 bg-gradient-to-b from-slate-800 to-slate-900">
         {/* Header */}
         <motion.div
@@ -348,7 +356,7 @@ export default function PricingSection() {
                       disabled={!isRazorpayLoaded || isProcessing}
                       className={`w-full bg-gradient-to-r ${plan.gradient} hover:opacity-90 text-white font-medium`}
                     >
-                      {!session ? "Sign In to Purchase" : 
+                      {!session ? `Buy Now - ₹${plan.price}` :
                        !isRazorpayLoaded ? "Loading..." : 
                        isProcessing ? "Processing..." :
                        `Choose Plan`}

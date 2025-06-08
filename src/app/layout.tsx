@@ -106,7 +106,7 @@ const structuredData = {
     "Question Generation",
     "Mind Mapping",
     "Educational Technology",
-    "AI-Powered Learning",
+    "AI-Powered Teaching",
     "Assessment Creation",
     "PDF Processing",
     "Teaching Tools"

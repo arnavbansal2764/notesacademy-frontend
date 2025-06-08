@@ -114,7 +114,7 @@ export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData
           If you have any questions, please contact our support team.<br>
           This is an automated email, please do not reply directly.
         </p>
-        <p style="color: #1976d2; font-weight: bold;">Happy Learning! 📚</p>
+        <p style="color: #1976d2; font-weight: bold;">Happy Teaching! 📚</p>
       </div>
     </body>
     </html>

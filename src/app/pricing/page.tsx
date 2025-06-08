@@ -61,7 +61,7 @@ const pricingPlans: PricingPlan[] = [
     icon: Star,
     color: "purple",
     gradient: "from-purple-500 to-pink-500",
-    description: "Most popular choice for students",
+    description: "Most popular choice for teachers",
     features: [
       "20 AI-powered generations",
       "All Starter features",
@@ -81,7 +81,7 @@ const pricingPlans: PricingPlan[] = [
     icon: Crown,
     color: "gold",
     gradient: "from-yellow-500 to-orange-500",
-    description: "Ultimate package for serious learners",
+    description: "Ultimate package for serious tutors",
     features: [
       "50 AI-powered generations",
       "All Popular features",
@@ -102,6 +102,7 @@ function PricingContent() {
   const [isQuickPaymentModalOpen, setIsQuickPaymentModalOpen] = useState(false);
 
   // Check if user was redirected from auth
+  //@ts-ignore
   const reason = searchParams.get("reason");
   const email = searchParams.get("email");
 
@@ -277,7 +278,7 @@ function PricingContent() {
           )}
           
           <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
-            {reason === "account_required" ? "Create Your Account" : "Choose Your Learning Package"}
+            {reason === "account_required" ? "Create Your Account" : "Choose Your Teaching Package"}
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
             {reason === "account_required" 
