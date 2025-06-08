@@ -98,7 +98,7 @@ export default function Navbar() {
                             <BrainCircuit className="h-5 w-5 text-white" />
                         </div>
                         <span className="font-bold text-2xl bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">
-                            NotesInstitute
+                            NotesAcademy
                         </span>
                     </Link>
 

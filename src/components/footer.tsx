@@ -7,7 +7,7 @@ export default function Footer() {
                 <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
                     <div>
                         <h3 className="font-bold text-lg bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">
-                            NotesInstitute
+                            NotesAcademy
                         </h3>
                         <p className="text-gray-400 text-sm">
                             AI-powered study tools for smarter learning
@@ -28,7 +28,7 @@ export default function Footer() {
                 </div>
 
                 <div className="border-t border-slate-800 mt-6 pt-6 text-center text-gray-400 text-sm">
-                    <p>&copy; {new Date().getFullYear()} NotesInstitute. All rights reserved.</p>
+                    <p>&copy; {new Date().getFullYear()} NotesAcademy. All rights reserved.</p>
                 </div>
             </div>
         </footer>

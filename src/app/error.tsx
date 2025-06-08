@@ -131,10 +131,10 @@ export default function Error({
                     <p>
                         If this problem persists, please contact our support team at{" "}
                         <a
-                            href="mailto:support@notesinstitute.com"
+                            href="mailto:support@notesacademy.com"
                             className="text-indigo-400 hover:text-indigo-300 transition-colors"
                         >
-                            support@notesinstitute.com
+                            support@notesacademy.com
                         </a>
                     </p>
                 </motion.div>

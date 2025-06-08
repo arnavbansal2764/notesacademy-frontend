@@ -92,7 +92,7 @@ export function QuickPaymentModal({ isOpen, onClose, plan }: QuickPaymentModalPr
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "NotesInstitute",
+        name: "NotesAcademy",
         description: `${plan!.name} - ${plan!.coins} Coins`,
         order_id: orderData.id,
         prefill: { name: userDetails.name, email: userDetails.email },

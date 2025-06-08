@@ -7,10 +7,10 @@ import Script from "next/script";
 
 export const metadata: Metadata = {
   title: {
-    default: "NotesInstitute - AI-Powered Question Generation & Mind Mapping for Educators",
-    template: "%s | NotesInstitute"
+    default: "NotesAcademy - AI-Powered Question Generation & Mind Mapping for Educators",
+    template: "%s | NotesAcademy"
   },
-  description: "Transform your teaching with NotesInstitute's AI-powered platform. Create objective and subjective questions from books, PDFs, and materials. Generate comprehensive mind maps for better topic retention. Perfect for tutors, parents, and educators.",
+  description: "Transform your teaching with NotesAcademy's AI-powered platform. Create objective and subjective questions from books, PDFs, and materials. Generate comprehensive mind maps for better topic retention. Perfect for tutors, parents, and educators.",
   keywords: [
     "AI question generation",
     "educational technology",
@@ -27,15 +27,15 @@ export const metadata: Metadata = {
     "question bank creation",
     "assessment tools"
   ],
-  authors: [{ name: "NotesInstitute Team" }],
-  creator: "NotesInstitute",
-  publisher: "NotesInstitute",
+  authors: [{ name: "NotesAcademy Team" }],
+  creator: "NotesAcademy",
+  publisher: "NotesAcademy",
   formatDetection: {
     email: false,
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://notesinstitute.in'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL || 'https://notesacademy.in'),
   alternates: {
     canonical: '/',
   },
@@ -43,25 +43,25 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_US',
     url: '/',
-    title: 'NotesInstitute - AI-Powered Question Generation & Mind Mapping for Educators',
-    description: 'Transform your teaching with NotesInstitute\'s AI-powered platform. Create questions from PDFs and generate mind maps for better learning outcomes.',
-    siteName: 'NotesInstitute',
+    title: 'NotesAcademy - AI-Powered Question Generation & Mind Mapping for Educators',
+    description: 'Transform your teaching with NotesAcademy\'s AI-powered platform. Create questions from PDFs and generate mind maps for better learning outcomes.',
+    siteName: 'NotesAcademy',
     images: [
       {
         url: '/og-image.jpg',
         width: 1200,
         height: 630,
-        alt: 'NotesInstitute - Educational AI Platform',
+        alt: 'NotesAcademy - Educational AI Platform',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'NotesInstitute - AI-Powered Question Generation & Mind Mapping',
+    title: 'NotesAcademy - AI-Powered Question Generation & Mind Mapping',
     description: 'Create objective & subjective questions from PDFs. Generate mind maps for better retention. Perfect for tutors, parents & educators.',
     images: ['/twitter-image.jpg'],
-    creator: '@notesinstitute',
-    site: '@notesinstitute',
+    creator: '@notesacademy',
+    site: '@notesacademy',
   },
   robots: {
     index: true,
@@ -85,12 +85,12 @@ export const metadata: Metadata = {
 const structuredData = {
   "@context": "https://schema.org",
   "@type": "EducationalOrganization",
-  "name": "NotesInstitute",
+  "name": "NotesAcademy",
   "alternateName": "Notes Institute",
-  "url": process.env.NEXT_PUBLIC_BASE_URL || "https://notesinstitute.com",
+  "url": process.env.NEXT_PUBLIC_BASE_URL || "https://notesacademy.com",
   "logo": {
     "@type": "ImageObject",
-    "url": `${process.env.NEXT_PUBLIC_BASE_URL || "https://notesinstitute.com"}/logo.png`,
+    "url": `${process.env.NEXT_PUBLIC_BASE_URL || "https://notesacademy.com"}/logo.png`,
     "width": "400",
     "height": "400"
   },
@@ -117,7 +117,7 @@ const structuredData = {
     "description": "Create objective and subjective questions from educational materials and generate comprehensive mind maps",
     "provider": {
       "@type": "EducationalOrganization",
-      "name": "NotesInstitute"
+      "name": "NotesAcademy"
     },
     "areaServed": "Worldwide",
     "hasOfferCatalog": {

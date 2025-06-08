@@ -91,7 +91,7 @@ export default function HeroSection() {
         if (session) {
             router.push("/dashboard")
         } else {
-            router.push("/auth")
+            router.push("/pricing")
         }
     }
 
@@ -340,7 +340,7 @@ export default function HeroSection() {
                                 className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-lg px-8"
                                 onClick={handleGetStarted}
                             >
-                                Get Started Free
+                                Get Started 
                                 <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                             <Button 
@@ -421,7 +421,7 @@ export default function HeroSection() {
                         </div>
 
                         {/* Feature Preview */}
-                        <div className="order-1 lg:order-2 relative">
+                        <div className="hidden lg:block order-1 lg:order-2 relative">
                             <div className="relative h-[400px] w-full max-w-[500px] mx-auto">
                                 {features.map((feature, index) => (
                                     <motion.div
@@ -505,76 +505,7 @@ export default function HeroSection() {
                             <div className="absolute -top-10 -right-10 h-40 w-40 bg-purple-500/20 rounded-full blur-3xl"></div>
                             <div className="absolute -bottom-10 -left-10 h-40 w-40 bg-blue-500/20 rounded-full blur-3xl"></div>
                         </div>
-                    </motion.div>
-
-                    {/* Stats Section */}
-                    <motion.div
-                        className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-24"
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.8 }}
-                    >
-                        {[
-                            { value: "10,000+", label: "Active Students" },
-                            { value: "500,000+", label: "Questions Generated" },
-                            { value: "98%", label: "Satisfaction Rate" },
-                            { value: "30+", label: "Subject Areas" },
-                        ].map((stat, index) => (
-                            <Card key={index} className="bg-white/5 border-white/10 overflow-hidden relative">
-                                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10 opacity-30"></div>
-                                <CardContent className="p-6 text-center relative">
-                                    <h3 className="text-3xl md:text-4xl font-bold mb-1 bg-gradient-to-r from-white to-white/80 bg-clip-text text-transparent">
-                                        {stat.value}
-                                    </h3>
-                                    <p className="text-white/60">{stat.label}</p>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </motion.div>
-
-                    {/* CTA Section */}
-                    <motion.div
-                        className="max-w-4xl mx-auto text-center mb-24 relative"
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 1 }}
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-blue-500/20 blur-3xl opacity-30 rounded-3xl"></div>
-                        <div className="relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-3xl p-8 md:p-12">
-                            <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to revolutionize your learning?</h2>
-                            <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
-                                Join thousands of students who are saving time and improving their grades with our AI-powered learning
-                                tools.
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                <Button 
-                                    size="lg" 
-                                    className="bg-white text-black hover:bg-white/90 text-lg px-8"
-                                    onClick={handleGetStarted}
-                                >
-                                    Get Started Now
-                                </Button>
-                                <Button 
-                                    size="lg" 
-                                    variant="outline" 
-                                    className="border-white/30 text-white hover:bg-white/10 text-lg"
-                                    onClick={handleWatchDemo}
-                                >
-                                    Watch Demo
-                                </Button>
-                                {session && (
-                                    <Button 
-                                        size="lg" 
-                                        className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-lg px-8"
-                                        onClick={handleQuickPurchase}
-                                        disabled={!isRazorpayLoaded || isProcessing}
-                                    >
-                                        {isProcessing ? "Processing..." : "Quick Buy ₹99"}
-                                    </Button>
-                                )}
-                            </div>
-                        </div>
-                    </motion.div>
+                    </motion.div>                    
                 </div>
             </section>
 

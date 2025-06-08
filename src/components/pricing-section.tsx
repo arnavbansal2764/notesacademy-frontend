@@ -360,66 +360,7 @@ export default function PricingSection() {
           })}
         </motion.div>
 
-        {/* Bottom CTA */}
-        <motion.div
-          className="text-center"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.2 }}
-          viewport={{ once: true }}
-        >
-          <div className="max-w-2xl mx-auto">
-            <h3 className="text-2xl font-bold mb-4">Ready to Transform Your Learning?</h3>
-            <p className="text-gray-300 mb-6">
-              Join thousands of students who are already using our AI-powered tools to enhance their studies.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                size="lg"
-                onClick={() => router.push("/pricing")}
-                className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
-              >
-                View All Plans
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="border-white/30 text-white hover:bg-white/10"
-                onClick={() => {
-                  const productSection = document.getElementById("product-showcase")
-                  if (productSection) {
-                    productSection.scrollIntoView({ behavior: "smooth" })
-                  }
-                }}
-              >
-                Learn More
-              </Button>
-            </div>
-          </div>
-
-          {/* Trust indicators */}
-          <div className="mt-12 pt-8 border-t border-slate-700">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
-              <div>
-                <div className="text-2xl font-bold text-purple-400">10,000+</div>
-                <div className="text-sm text-gray-400">Happy Students</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-blue-400">500,000+</div>
-                <div className="text-sm text-gray-400">AI Generations</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-green-400">98%</div>
-                <div className="text-sm text-gray-400">Satisfaction Rate</div>
-              </div>
-              <div>
-                <div className="text-2xl font-bold text-yellow-400">24/7</div>
-                <div className="text-sm text-gray-400">Support Available</div>
-              </div>
-            </div>
-          </div>
-        </motion.div>
+        
       </section>
     </>
   )
