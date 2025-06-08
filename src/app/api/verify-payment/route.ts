@@ -4,7 +4,7 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "@/lib/authOptions"
 import prisma from "@/lib/prisma"
 
-const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET!
+const RAZORPAY_KEY_SECRET = "7QOE8jUm3IEuK7Y5IGGeeMGz"
 
 export async function POST(request: NextRequest) {
     try {

@@ -155,7 +155,7 @@ export default function PricingSection() {
 
       // Initialize Razorpay
       const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+        key: "rzp_test_Z53yBZFgq4GkQL",
         amount: orderData.amount,
         currency: orderData.currency,
         name: "Notes Academy",
@@ -359,8 +359,6 @@ export default function PricingSection() {
             );
           })}
         </motion.div>
-
-        
       </section>
     </>
   )
