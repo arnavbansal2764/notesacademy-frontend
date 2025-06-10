@@ -64,7 +64,7 @@ export function QuickPaymentModal({ isOpen, onClose, plan }: QuickPaymentModalPr
     setIsProcessing(true)
 
     try {
-      // Create order without requiring authentication
+      // Create order for unauthenticated user
       const orderResponse = await fetch("/api/create-razorpay-order", {
         method: "POST",
         headers: {
@@ -98,9 +98,15 @@ export function QuickPaymentModal({ isOpen, onClose, plan }: QuickPaymentModalPr
         prefill: { name: userDetails.name, email: userDetails.email },
         notes: { name: userDetails.name, email: userDetails.email, coins: plan!.coins, planName: plan!.name, isNewUser: "true" },
         theme: { color: "#3B82F6" },
-        handler(response: any) {
-          toast.success("Payment successful! Check your email for login details.")
-          setTimeout(() => router.push("/auth?message=account_created"), 2000)
+        handler: function (response: any) {
+          // Redirect to success page with payment details
+          const successUrl = new URL('/payment-success', window.location.origin);
+          successUrl.searchParams.set('amount', plan.price.toString());
+          successUrl.searchParams.set('coins', plan.coins.toString());
+          successUrl.searchParams.set('plan', encodeURIComponent(plan.name));
+          successUrl.searchParams.set('transaction_id', response.razorpay_payment_id);
+          
+          window.location.href = successUrl.toString();
         },
         modal: {
           ondismiss() {

@@ -185,9 +185,14 @@ function PricingContent() {
             color: "#6366f1",
           },
           handler: function (response: any) {
-            toast.success("Payment successful! Coins will be credited shortly.");
-            // Refresh user data if logged in
-            window.location.reload();
+            // Redirect to success page with payment details
+            const successUrl = new URL('/payment-success', window.location.origin);
+            successUrl.searchParams.set('amount', plan.price.toString());
+            successUrl.searchParams.set('coins', plan.coins.toString());
+            successUrl.searchParams.set('plan', encodeURIComponent(plan.name));
+            successUrl.searchParams.set('transaction_id', response.razorpay_payment_id);
+            
+            window.location.href = successUrl.toString();
           },
           modal: {
             ondismiss: function () {

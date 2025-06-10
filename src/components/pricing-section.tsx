@@ -189,20 +189,21 @@ export default function PricingSection() {
           })
 
           if (verifyResponse.ok) {
-            toast.success(`Payment successful! ${plan.coins} coins added to your account.`)
+            // Redirect to success page with payment details
+            const successUrl = new URL('/payment-success', window.location.origin);
+            successUrl.searchParams.set('amount', plan.price.toString());
+            successUrl.searchParams.set('coins', plan.coins.toString());
+            successUrl.searchParams.set('plan', encodeURIComponent(plan.name));
+            successUrl.searchParams.set('transaction_id', response.razorpay_payment_id);
             
-            // Refresh coin balance instead of full page reload
-            await fetchUserCoins()
-            
-            // Optional: Also trigger a custom event for other components
-            window.dispatchEvent(new CustomEvent('coinBalanceUpdated'))
+            window.location.href = successUrl.toString();
           } else {
             toast.error("Payment verification failed")
+            setIsProcessing(false)
           }
         } catch (error) {
           console.error("Payment verification error:", error)
           toast.error("Payment verification failed")
-        } finally {
           setIsProcessing(false)
         }
       },

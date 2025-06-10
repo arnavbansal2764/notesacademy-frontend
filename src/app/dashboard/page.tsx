@@ -7,13 +7,14 @@ import { useRouter } from "next/navigation";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Eye, Clock, FileText, Award, CheckCircle, XCircle, Network } from "lucide-react";
+import { Eye, Clock, FileText, Award, CheckCircle, XCircle, Network, Download } from "lucide-react";
 import Navbar from "@/components/navbar";
 import Footer from "@/components/footer";
 import { Modal } from "@/components/ui/modal";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import toast from "react-hot-toast";
+import { downloadMCQPDF } from "@/lib/pdf-generator";
 
 interface SubjectiveResult {
   id: string;
@@ -200,6 +201,24 @@ export default function DashboardPage() {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}m ${remainingSeconds}s`;
+  };
+
+  const handleDownloadMCQPDF = (result: MCQResult) => {
+    try {
+      const title = result.title || result.pdfName?.replace('.pdf', '') || 'MCQ Quiz';
+      const mcqsForPDF = result.questions.map(q => ({
+        question: q.question,
+        options: q.options,
+        correct_answer: q.correct_answer,
+        explanation: q.explanation || ''
+      }));
+
+      downloadMCQPDF(title, mcqsForPDF);
+      toast.success("PDF downloaded successfully!");
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Failed to download PDF");
+    }
   };
 
   if (status === "loading") {
@@ -554,7 +573,15 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </CardContent>
-                      <CardFooter className="flex justify-end">
+                      <CardFooter className="flex justify-between">
+                        <Button
+                          variant="outline"
+                          onClick={() => handleDownloadMCQPDF(result)}
+                          className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:bg-green-500/20"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Download PDF
+                        </Button>
                         <Button
                           onClick={() => viewMCQResult(result)}
                           className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
@@ -772,7 +799,15 @@ export default function DashboardPage() {
               })}
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-between">
+              <Button
+                variant="outline"
+                onClick={() => handleDownloadMCQPDF(selectedMCQ)}
+                className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:bg-green-500/20"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Download PDF
+              </Button>
               <Button
                 onClick={() => setIsMCQModalOpen(false)}
                 className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"

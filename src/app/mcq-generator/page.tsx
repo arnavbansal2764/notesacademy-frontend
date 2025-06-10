@@ -10,13 +10,14 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { AIVisualizationLoader } from "@/components/ui/ai-visualization-loader"
-import { FileUp, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, RefreshCw, FileText } from "lucide-react"
+import { FileUp, CheckCircle2, AlertCircle, ChevronRight, ChevronLeft, RefreshCw, FileText, Download } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
 import confetti from "canvas-confetti"
 import { useSession } from "next-auth/react"
 import { CoinBalanceDisplay } from "@/components/ui/coin-balance-display"
+import { downloadMCQPDF } from "@/lib/pdf-generator"
 
 // Define types for our MCQ data
 interface MCQOption {
@@ -430,6 +431,30 @@ export default function MCQGeneratorPage() {
         },
     }
 
+    // Add PDF download function
+    const handleDownloadPDF = () => {
+        if (mcqs.length === 0) {
+            toast.error("No questions to download");
+            return;
+        }
+
+        try {
+            const title = file?.name?.replace('.pdf', '') || 'MCQ Quiz';
+            const mcqsForPDF = mcqs.map(mcq => ({
+                question: mcq.question,
+                options: mcq.options,
+                correct_answer: mcq.correct_answer,
+                explanation: mcq.explanation
+            }));
+
+            downloadMCQPDF(title, mcqsForPDF);
+            toast.success("PDF downloaded successfully!");
+        } catch (error) {
+            console.error("Error downloading PDF:", error);
+            toast.error("Failed to download PDF");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white">
             <Navbar />
@@ -632,6 +657,21 @@ export default function MCQGeneratorPage() {
                                                     </Button>
                                                 </motion.div>
                                             )}
+                                            <motion.div
+                                                initial={{ opacity: 0, scale: 0.9 }}
+                                                animate={{ opacity: 1, scale: 1 }}
+                                                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                                            >
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    onClick={handleDownloadPDF}
+                                                    className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:bg-green-500/20"
+                                                >
+                                                    <Download className="h-4 w-4 mr-1" />
+                                                    Download PDF
+                                                </Button>
+                                            </motion.div>
                                         </div>
                                         <motion.div
                                             className="text-sm text-gray-400"

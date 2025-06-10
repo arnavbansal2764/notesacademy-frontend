@@ -42,7 +42,7 @@ export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData
           <p><strong>Login Method:</strong></p>
           <p>📧 <strong>Email:</strong> ${email}</p>
           <p>🔑 <strong>Password Setup:</strong> You'll need to set up your password on first login</p>
-          <p>🌐 <strong>Login URL:</strong> <a href="${process.env.NEXTAUTH_URL}/login" style="color: #1976d2;">Click here to login</a></p>
+          <p>🌐 <strong>Login URL:</strong> <a href="${process.env.NEXTAUTH_URL}/auth" style="color: #1976d2;">Click here to login</a></p>
         </div>
         <p><em>Note: Since this is your first purchase, you'll be prompted to create a password when you first login.</em></p>
       </div>
@@ -51,7 +51,7 @@ export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData
       <div style="background-color: #e8f5e8; padding: 20px; border-radius: 8px; margin: 20px 0;">
         <h3 style="color: #388e3c; margin-top: 0;">💰 Coins Added to Your Account!</h3>
         <p>Your coins have been successfully added to your existing account.</p>
-        <p>🌐 <strong>Login:</strong> <a href="${process.env.NEXTAUTH_URL}/login" style="color: #388e3c;">Access your account</a></p>
+        <p>🌐 <strong>Login:</strong> <a href="${process.env.NEXTAUTH_URL}/auth" style="color: #388e3c;">Access your account</a></p>
       </div>
     `;
 
