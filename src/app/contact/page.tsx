@@ -12,10 +12,10 @@ export default function ContactPage() {
           <p>
             For any inquiries, please reach out to us at:{" "}
             <a
-              href="mailto:contactnotesacademy@gmail.com"
+              href="mailto:info@notesacademy.in"
               className="text-blue-400 hover:underline"
             >
-              contactnotesacademy@gmail.com
+              info@notesacademy.in
             </a>
           </p>
         </article>
