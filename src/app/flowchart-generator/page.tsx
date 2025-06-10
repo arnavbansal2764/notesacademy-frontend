@@ -65,6 +65,17 @@ export default function FlowchartGeneratorPage() {
         }
     }, [session])
 
+    // Redirect unauthenticated users after 10 seconds
+    useEffect(() => {
+        if (session !== undefined && !session?.user) {
+            const timer = setTimeout(() => {
+                router.push('/pricing')
+            }, 10000) // 10 seconds
+
+            return () => clearTimeout(timer)
+        }
+    }, [session, router])
+
     // Function to fetch user coins
     const fetchUserCoins = async () => {
         try {

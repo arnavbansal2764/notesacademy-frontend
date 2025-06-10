@@ -105,6 +105,12 @@ export default function Navbar() {
                     {/* Desktop Navigation */}
                     <div className="hidden md:flex items-center space-x-8">
                         <button
+                            onClick={() => handleNavigation("/")}
+                            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                        >
+                            Home
+                        </button>
+                        <button
                             onClick={() => handleNavigation("/mcq-generator")}
                             className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
                         >

@@ -16,6 +16,7 @@ import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
 import { useSession } from "next-auth/react"
+import { useRouter } from "next/navigation"
 import { CoinBalanceDisplay } from "@/components/ui/coin-balance-display"
 import { downloadSubjectivePDF } from "@/lib/pdf-generator"
 
@@ -25,8 +26,9 @@ interface SubjectiveQuestion {
 }
 
 export default function SubjectiveQAPage() {
-    // Add session
+    // Add session and router
     const { data: session } = useSession()
+    const router = useRouter()
 
     // File upload states
     const [file, setFile] = useState<File | null>(null)
@@ -62,6 +64,17 @@ export default function SubjectiveQAPage() {
             fetchUserCoins()
         }
     }, [session])
+
+    // Redirect unauthenticated users after 10 seconds
+    useEffect(() => {
+        if (session !== undefined && !session?.user) {
+            const timer = setTimeout(() => {
+                router.push('/pricing')
+            }, 10000) // 10 seconds
+
+            return () => clearTimeout(timer)
+        }
+    }, [session, router])
 
     // Function to fetch user coins
     const fetchUserCoins = async () => {
