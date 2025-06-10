@@ -48,8 +48,7 @@ const pricingPlans: PricingPlan[] = [
       "MCQ Quiz Generator",
       "Subjective Q&A Generator", 
       "Flowchart & Mindmap Creator",
-      "Download & Share Results",
-      "7-day result history"
+      "Download & Share Results"
     ]
   },
   {
@@ -67,7 +66,6 @@ const pricingPlans: PricingPlan[] = [
       "All Starter features",
       "Priority processing",
       "Advanced analytics",
-      "30-day result history",
       "Email support"
     ],
     popular: true
@@ -85,7 +83,6 @@ const pricingPlans: PricingPlan[] = [
     features: [
       "50 AI-powered generations",
       "All Popular features",
-      "Unlimited result history",
       "Premium support",
       "Early access to new features",
       "Custom export options"
