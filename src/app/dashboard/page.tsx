@@ -14,7 +14,7 @@ import { Modal } from "@/components/ui/modal";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import toast from "react-hot-toast";
-import { downloadMCQPDF } from "@/lib/pdf-generator";
+import { downloadMCQPDF, downloadSubjectivePDF } from "@/lib/pdf-generator";
 
 interface SubjectiveResult {
   id: string;
@@ -215,6 +215,23 @@ export default function DashboardPage() {
 
       downloadMCQPDF(title, mcqsForPDF);
       toast.success("PDF downloaded successfully!");
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      toast.error("Failed to download PDF");
+    }
+  };
+
+  const handleDownloadSubjectivePDF = (result: SubjectiveResult, withAnswers: boolean = false) => {
+    try {
+      const title = result.title || result.pdfName?.replace('.pdf', '') || 'Subjective Questions';
+      const questionsForPDF = result.questions.map(q => ({
+        question: q.question,
+        answer: q.answer
+      }));
+
+      downloadSubjectivePDF(title, questionsForPDF, undefined, withAnswers);
+      const type = withAnswers ? "with answers" : "questions only";
+      toast.success(`PDF ${type} downloaded successfully!`);
     } catch (error) {
       console.error("Error downloading PDF:", error);
       toast.error("Failed to download PDF");
@@ -491,7 +508,27 @@ export default function DashboardPage() {
                           {result.pdfName || "Unnamed document"}
                         </p>
                       </CardContent>
-                      <CardFooter className="flex justify-end">
+                      <CardFooter className="flex justify-between">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadSubjectivePDF(result, false)}
+                            className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/30 hover:bg-blue-500/20"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            Questions
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadSubjectivePDF(result, true)}
+                            className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:bg-green-500/20"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            + Answers
+                          </Button>
+                        </div>
                         <Button
                           onClick={() => viewSubjectiveResult(result)}
                           className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
@@ -691,7 +728,25 @@ export default function DashboardPage() {
               ))}
             </div>
 
-            <div className="mt-6 flex justify-end">
+            <div className="mt-6 flex justify-between">
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => handleDownloadSubjectivePDF(selectedSubjective, false)}
+                  className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/30 hover:bg-blue-500/20"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Questions Only
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => handleDownloadSubjectivePDF(selectedSubjective, true)}
+                  className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:bg-green-500/20"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  With Answers
+                </Button>
+              </div>
               <Button
                 onClick={() => setIsSubjectiveModalOpen(false)}
                 className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"

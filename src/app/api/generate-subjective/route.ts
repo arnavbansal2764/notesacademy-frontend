@@ -51,14 +51,7 @@ export async function POST(request: NextRequest) {
         }),
       });
 
-      if (!response.ok) {
-        // Refund coin if API fails
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { coins: { increment: 1 } }
-        });
-        throw new Error(`API responded with status ${response.status}`);
-      }
+  
 
       const data = await response.json();
 

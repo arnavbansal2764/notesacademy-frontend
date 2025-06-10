@@ -11,12 +11,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Modal } from "@/components/ui/modal"
 import { AIVisualizationLoader } from "@/components/ui/ai-visualization-loader"
-import { FileUp, CheckCircle2, AlertCircle, Eye, BookOpen } from "lucide-react"
+import { FileUp, CheckCircle2, AlertCircle, Eye, BookOpen, Download } from "lucide-react"
 import Navbar from "@/components/navbar"
 import Footer from "@/components/footer"
 import { uploadToS3 } from "@/lib/s3-upload"
 import { useSession } from "next-auth/react"
 import { CoinBalanceDisplay } from "@/components/ui/coin-balance-display"
+import { downloadSubjectivePDF } from "@/lib/pdf-generator"
 
 interface SubjectiveQuestion {
     question: string
@@ -226,6 +227,49 @@ export default function SubjectiveQAPage() {
         setIsModalOpen(true)
     }
 
+    // Add PDF download functions
+    const handleDownloadQuestionsOnly = () => {
+        if (questions.length === 0) {
+            toast.error("No questions to download")
+            return
+        }
+
+        try {
+            const title = file?.name?.replace('.pdf', '') || 'Subjective Questions'
+            const questionsForPDF = questions.map(q => ({
+                question: q.question,
+                answer: q.answer
+            }))
+
+            downloadSubjectivePDF(title, questionsForPDF, undefined, false)
+            toast.success("Questions PDF downloaded successfully!")
+        } catch (error) {
+            console.error("Error downloading PDF:", error)
+            toast.error("Failed to download PDF")
+        }
+    }
+
+    const handleDownloadWithAnswers = () => {
+        if (questions.length === 0) {
+            toast.error("No questions to download")
+            return
+        }
+
+        try {
+            const title = file?.name?.replace('.pdf', '') || 'Subjective Questions'
+            const questionsForPDF = questions.map(q => ({
+                question: q.question,
+                answer: q.answer
+            }))
+
+            downloadSubjectivePDF(title, questionsForPDF, undefined, true)
+            toast.success("Questions with answers PDF downloaded successfully!")
+        } catch (error) {
+            console.error("Error downloading PDF:", error)
+            toast.error("Failed to download PDF")
+        }
+    }
+
     // Animation variants
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -421,9 +465,30 @@ export default function SubjectiveQAPage() {
                         <TabsContent value="generated">
                             {questions.length > 0 ? (
                                 <motion.div className="space-y-6" variants={containerVariants} initial="hidden" animate="visible">
-                                    <motion.h2 className="text-2xl font-bold mb-4" variants={itemVariants}>
-                                        Generated Questions
-                                    </motion.h2>
+                                    <motion.div 
+                                        className="flex justify-between items-center"
+                                        variants={itemVariants}
+                                    >
+                                        <h2 className="text-2xl font-bold">Generated Questions</h2>
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                onClick={handleDownloadQuestionsOnly}
+                                                className="bg-gradient-to-r from-blue-500/10 to-indigo-500/10 border-blue-500/30 hover:bg-blue-500/20"
+                                            >
+                                                <Download className="h-4 w-4 mr-2" />
+                                                Questions Only
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                onClick={handleDownloadWithAnswers}
+                                                className="bg-gradient-to-r from-green-500/10 to-emerald-500/10 border-green-500/30 hover:bg-green-500/20"
+                                            >
+                                                <Download className="h-4 w-4 mr-2" />
+                                                With Answers
+                                            </Button>
+                                        </div>
+                                    </motion.div>
 
                                     {questions.map((question, index) => (
                                         <motion.div key={index} variants={itemVariants}>
