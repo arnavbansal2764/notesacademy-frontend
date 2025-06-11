@@ -111,6 +111,12 @@ export default function Navbar() {
                             Home
                         </button>
                         <button
+                            onClick={() => handleNavigation("/short-notes-generator")}
+                            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
+                        >
+                            Short Notes
+                        </button>
+                        <button
                             onClick={() => handleNavigation("/mcq-generator")}
                             className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
                         >

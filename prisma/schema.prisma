@@ -21,13 +21,14 @@ model User {
   mindmaps      mindmap[] // Add this relation
   createdAt     DateTime? @default(now()) // Make optional
   updatedAt     DateTime? @default(now()) // Make optional
+  shortNotesResults ShortNotesResult[] 
 }
 
 model Payment {
   id             String   @id @default(auto()) @map("_id") @db.ObjectId
   paymentId      String   @unique
   userId         String   @db.ObjectId
-  user           User     @relation(fields: [userId], references: [id])
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   amount         Int
   currency       String
   paymentMethod  String
@@ -41,7 +42,7 @@ model Payment {
 model subjectiveresult {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String?  // Optional title for the quiz/study session
   pdfName     String?  // Name of the uploaded PDF
   pdfUrl      String   // S3 URL of the uploaded PDF
@@ -52,7 +53,7 @@ model subjectiveresult {
 model mcqresult {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   userId          String   @db.ObjectId
-  user            User     @relation(fields: [userId], references: [id])
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title           String?  // Optional title for the quiz
   totalQuestions  Int
   correctAnswers  Int
@@ -68,10 +69,24 @@ model mcqresult {
 model mindmap {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   userId      String   @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String?  // Optional title for the mindmap
   pdfName     String?  // Name of the uploaded PDF
   pdfUrl      String   // S3 URL of the uploaded PDF
   mindmapUrl  String   // URL to the generated mindmap JSON
   createdAt   DateTime @default(now())
+}
+
+model ShortNotesResult {
+  id        String   @id @default(cuid()) @map("_id")
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  pdfName   String?
+  pdfUrl    String
+  notesUrl  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("short_notes_results")
 }

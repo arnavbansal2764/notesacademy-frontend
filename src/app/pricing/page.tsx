@@ -47,6 +47,7 @@ const pricingPlans: PricingPlan[] = [
       "5 AI-powered generations",
       "MCQ Quiz Generator",
       "Subjective Q&A Generator", 
+      "Short Notes Generator",
       "Flowchart & Mindmap Creator",
       "Download & Share Results"
     ]

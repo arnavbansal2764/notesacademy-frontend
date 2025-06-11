@@ -10,11 +10,12 @@ export const metadata: Metadata = {
     default: "NotesAcademy - AI-Powered Question Generation & Mind Mapping for Educators",
     template: "%s | NotesAcademy"
   },
-  description: "Transform your teaching with NotesAcademy's AI-powered platform. Create objective and subjective questions from books, PDFs, and materials. Generate comprehensive mind maps for better topic retention. Perfect for tutors, parents, and educators.",
+  description: "Transform your teaching with NotesAcademy's AI-powered platform. Create objective and subjective questions from books, PDFs, and materials. Generate comprehensive mind maps and concise short notes for better topic retention. Perfect for tutors, parents, and educators.",
   keywords: [
     "AI question generation",
     "educational technology",
     "mind mapping",
+    "short notes generator",
     "objective questions",
     "subjective questions",
     "PDF to questions",
