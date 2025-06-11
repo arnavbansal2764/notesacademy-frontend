@@ -90,7 +90,7 @@ const pricingPlans: PricingPlan[] = [
   }
 ];
 
-function PricingContent() {
+export function PricingContent() {
   const { data: session } = useSession();
   const [isProcessing, setIsProcessing] = useState<string | null>(null);
   const [razorpayLoaded, setRazorpayLoaded] = useState(false);

@@ -230,22 +230,29 @@ export default function HeroSection() {
 
     const features = [
         {
-            title: "PDF Analysis",
-            description: "Upload any PDF study material and get instant learning resources",
+            title: "MCQ Generator",
+            description: "Upload any PDF study material and get instant MCQs based on it",
             icon: <BookOpen className="h-8 w-8 text-rose-500" />,
             color: "from-rose-500 to-pink-600",
             image: "/placeholder.svg?height=300&width=400",
         },
         {
-            title: "MCQ Generation",
-            description: "AI-powered multiple choice questions with detailed explanations",
+            title: "Short Notes Generator",
+            description: "Trims down your study material into concise, easy to learn pointers",
             icon: <BrainCircuit className="h-8 w-8 text-blue-500" />,
             color: "from-blue-500 to-cyan-600",
             image: "/placeholder.svg?height=300&width=400",
         },
         {
-            title: "Visual Flowcharts",
+            title: "Visual Mind-Maps and Flowchart Generator",
             description: "Convert complex topics into easy-to-understand visual flowcharts",
+            icon: <BarChart3 className="h-8 w-8 text-green-500" />,
+            color: "from-green-500 to-teal-600",
+            image: "/placeholder.svg?height=300&width=400",
+        },
+        {
+            title: "Subjective Questions Generator",
+            description: "Generates subjective questions along with it's detailed answers",
             icon: <BarChart3 className="h-8 w-8 text-purple-500" />,
             color: "from-purple-500 to-violet-600",
             image: "/placeholder.svg?height=300&width=400",
@@ -267,7 +274,7 @@ export default function HeroSection() {
                 onError={() => console.error("Failed to load Razorpay")}
             />
 
-            <section className="relative min-h-screen pt-24 overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black">
+            <section className="relative min-h-screen pt-24 overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black px-10">
                 {/* Animated Background Elements */}
                 <div className="absolute inset-0 overflow-hidden">
                     {/* Only render animated elements on the client side */}
@@ -328,32 +335,8 @@ export default function HeroSection() {
                         >
                             Generate MCQs, subjective questions, and interactive flowcharts from your study materials in seconds
                         </motion.p>
-
-                        <motion.div
-                            className="flex flex-col sm:flex-row gap-4 mb-12"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.6 }}
-                        >
-                            <Button
-                                size="lg"
-                                className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-lg px-8"
-                                onClick={handleGetStarted}
-                            >
-                                Get Started 
-                                <ArrowRight className="ml-2 h-4 w-4" />
-                            </Button>
-                            <Button 
-                                size="lg" 
-                                variant="outline" 
-                                className="border-white/30 text-white hover:bg-white/10 text-lg"
-                                onClick={handleUploadPDF}
-                            >
-                                <FileUp className="mr-2 h-5 w-5" /> Upload PDF
-                            </Button>
-                        </motion.div>
                     </div>
-
+                    <h2 className="text-center text-3xl font-bold text-white mb-8 pb-10">Features of our Product</h2>
                     {/* Feature Showcase */}
                     <motion.div
                         className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24"
@@ -390,7 +373,7 @@ export default function HeroSection() {
                                 ))}
                             </div>
 
-                            <div className="space-y-4">
+                            {/* <div className="space-y-4">
                                 <h3 className="text-xl font-semibold">Why teachers love us:</h3>
                                 <ul className="space-y-3">
                                     {benefitItems.map((item, index) => (
@@ -406,7 +389,7 @@ export default function HeroSection() {
                                         </motion.li>
                                     ))}
                                 </ul>
-                            </div>
+                            </div> */}
                         </div>
 
                         {/* Feature Preview */}

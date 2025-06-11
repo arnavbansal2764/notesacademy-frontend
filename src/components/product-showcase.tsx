@@ -43,7 +43,7 @@ export default function ProductShowcase() {
     }
 
     return (
-        <section id="product-showcase" className="py-20 px-4 bg-gradient-to-b from-black to-gray-900">
+        <section id="product-showcase" className="py-20  bg-gradient-to-b from-black to-gray-900 px-12">
             <div className="container mx-auto">
                 <motion.h2
                     className="text-3xl md:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent"
