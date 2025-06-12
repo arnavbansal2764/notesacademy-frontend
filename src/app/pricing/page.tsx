@@ -287,12 +287,7 @@ export function PricingContent() {
           <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent leading-tight">
             {reason === "account_required" ? "Create Your Account" : "Choose Your Teaching Package"}
           </h1>
-          <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
-            {reason === "account_required" 
-              ? "Get started with our AI-powered study tools by purchasing your first coin package."
-              : "Get coins to unlock AI-powered study tools. Generate MCQs, subjective questions, and interactive mindmaps from your PDFs."
-            }
-          </p>
+          
           <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
             <span className="w-2 h-2 bg-green-500 rounded-full"></span>
             <span>Secure payments via Razorpay</span>
@@ -312,7 +307,7 @@ export function PricingContent() {
         >
           <div className="flex items-center justify-center gap-3 mb-2">
             <span className="text-4xl">🪙</span>
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+            <h2 className="text-xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent text-center">
               1 Coin = 1 AI Generation
             </h2>
             <span className="text-4xl">⚡</span>
@@ -388,11 +383,11 @@ export function PricingContent() {
                     <Button
                       onClick={() => handlePurchase(plan)}
                       disabled={isProcessing === plan.id || !razorpayLoaded}
-                      className={`w-full bg-gradient-to-r ${plan.gradient} hover:opacity-90 text-white font-medium py-3`}
+                      className={`w-full bg-gradient-to-r ${plan.gradient} hover:opacity-90 text-white font-medium p-8 text-xl`}
                     >
                       {isProcessing === plan.id ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin "></div>
                           Processing...
                         </div>
                       ) : (

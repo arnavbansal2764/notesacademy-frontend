@@ -274,7 +274,7 @@ export default function HeroSection() {
                 onError={() => console.error("Failed to load Razorpay")}
             />
 
-            <section className="relative min-h-screen pt-24 overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black px-10">
+            <section className="relative min-h-screen pt-24 overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black md:px-10">
                 {/* Animated Background Elements */}
                 <div className="absolute inset-0 overflow-hidden">
                     {/* Only render animated elements on the client side */}
