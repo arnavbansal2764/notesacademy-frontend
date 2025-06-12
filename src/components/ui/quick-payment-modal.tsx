@@ -165,11 +165,11 @@ export function QuickPaymentModal({ isOpen, onClose, plan }: QuickPaymentModalPr
               <div className="text-right">
                 {plan.originalPrice && (
                   <div className="text-sm text-gray-400 line-through">
-                    ₹{plan.originalPrice}
+                    ₹{" "}{plan.originalPrice}
                   </div>
                 )}
                 <div className="text-2xl font-bold text-green-400">
-                  ₹{plan.price}
+                  ₹  {plan.price}
                 </div>
               </div>
             </div>
@@ -232,7 +232,7 @@ export function QuickPaymentModal({ isOpen, onClose, plan }: QuickPaymentModalPr
             ) : (
               <div className="flex items-center">
                 <CreditCard className="h-5 w-5 mr-2" />
-                Pay ₹{plan.price}
+                Pay ₹  {plan.price}
               </div>
             )}
           </Button>
