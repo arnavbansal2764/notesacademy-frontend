@@ -62,7 +62,7 @@ export default function HeroSection() {
     // Auto-rotate features
     useEffect(() => {
         const interval = setInterval(() => {
-            setActiveFeature((prev) => (prev + 1) % 3)
+            setActiveFeature((prev) => (prev + 1) % 4)
         }, 4000)
         return () => clearInterval(interval)
     }, [])

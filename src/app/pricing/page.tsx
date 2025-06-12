@@ -38,7 +38,7 @@ const pricingPlans: PricingPlan[] = [
     id: "starter",
     name: "Starter Pack",
     coins: 5,
-    price: 99,
+    price: 10,
     icon: Zap,
     color: "blue",
     gradient: "from-blue-500 to-cyan-500",
@@ -265,6 +265,9 @@ export function PricingContent() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
+          {/* Attention Grabbing Coin Info */}
+          
+
           {reason === "account_required" && (
             <motion.div
               className="mb-6 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg"
@@ -281,7 +284,7 @@ export function PricingContent() {
             </motion.div>
           )}
           
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent">
+          <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent leading-tight">
             {reason === "account_required" ? "Create Your Account" : "Choose Your Teaching Package"}
           </h1>
           <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">
@@ -301,7 +304,23 @@ export function PricingContent() {
             <span>Account auto-creation</span>
           </div>
         </motion.div>
-
+        <motion.div
+          className="mb-8 p-6 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-500/40 rounded-xl"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+        >
+          <div className="flex items-center justify-center gap-3 mb-2">
+            <span className="text-4xl">🪙</span>
+            <h2 className="text-3xl font-bold bg-gradient-to-r from-yellow-400 to-orange-400 bg-clip-text text-transparent">
+              1 Coin = 1 AI Generation
+            </h2>
+            <span className="text-4xl">⚡</span>
+          </div>
+          <p className="text-yellow-200 text-lg text-center">
+            Use 1 coin to generate MCQs, Short Notes, Subjective Q&As, or Interactive Mindmaps from any PDF
+          </p>
+        </motion.div>
         {/* Pricing Cards */}
         <motion.div
           className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-16"
@@ -425,14 +444,7 @@ export function PricingContent() {
               </CardContent>
             </Card>
 
-            <Card className="bg-slate-800 border-slate-700">
-              <CardHeader>
-                <CardTitle className="text-lg">Can I get a refund?</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-300">We offer refunds within 7 days of purchase if you haven't used any coins. Contact support for assistance.</p>
-              </CardContent>
-            </Card>
+            
           </div>
         </motion.div>
       </motion.div>

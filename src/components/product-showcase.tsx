@@ -1,6 +1,6 @@
 "use client"
 import { motion } from "framer-motion"
-import { FileText, List, HelpCircle, GitBranch } from "lucide-react"
+import { FileText, List, HelpCircle, GitBranch, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSession } from "next-auth/react"
@@ -13,6 +13,14 @@ export default function ProductShowcase() {
     const handleMCQGenerator = () => {
         if (session) {
             router.push("/mcq-generator")
+        } else {
+            router.push("/auth")
+        }
+    }
+
+    const handleShortNotesGenerator = () => {
+        if (session) {
+            router.push("/short-notes-generator")
         } else {
             router.push("/auth")
         }
@@ -43,7 +51,7 @@ export default function ProductShowcase() {
     }
 
     return (
-        <section id="product-showcase" className="py-20  bg-gradient-to-b from-black to-gray-900 px-12">
+        <section id="product-showcase" className="py-20 bg-gradient-to-b from-black to-gray-900 px-4 md:px-12">
             <div className="container mx-auto">
                 <motion.h2
                     className="text-3xl md:text-4xl font-bold text-center mb-16 bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent"
@@ -84,7 +92,7 @@ export default function ProductShowcase() {
                                 </li>
                             </ul>
                             <Button
-                                className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
+                                className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white"
                                 onClick={handleMCQGenerator}
                             >
                                 Try MCQ Generator
@@ -138,6 +146,85 @@ export default function ProductShowcase() {
                                             <p className="flex items-center">
                                                 <span className="inline-block w-5">D.</span> To reduce computational complexity
                                             </p>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </div>
+                </div>
+
+                {/* Short Notes Generator */}
+                <div id="shortnotes" className="mb-32">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <motion.div
+                            initial={{ opacity: 0, x: -50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8 }}
+                            viewport={{ once: true }}
+                        >
+                            <h3 className="text-2xl md:text-3xl font-bold mb-4">Short Notes Generator</h3>
+                            <p className="text-gray-300 mb-6">
+                                Transform lengthy study materials into concise, easy-to-review notes. Our AI analyzes your PDF
+                                and extracts key points, important concepts, and essential information into digestible format.
+                            </p>
+                            <ul className="space-y-3 mb-6">
+                                <li className="flex items-start">
+                                    <BookOpen className="h-6 w-6 mr-2 text-green-400 flex-shrink-0 mt-0.5" />
+                                    <span>Condenses complex chapters into focused short notes</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <BookOpen className="h-6 w-6 mr-2 text-green-400 flex-shrink-0 mt-0.5" />
+                                    <span>Highlights key concepts and important definitions</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <BookOpen className="h-6 w-6 mr-2 text-green-400 flex-shrink-0 mt-0.5" />
+                                    <span>Perfect for quick revision and exam preparation</span>
+                                </li>
+                            </ul>
+                            <Button
+                                className="bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white"
+                                onClick={handleShortNotesGenerator}
+                            >
+                                Try Short Notes Generator
+                            </Button>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, x: 50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8 }}
+                            viewport={{ once: true }}
+                        >
+                            <Card className="bg-slate-800 border-slate-700 shadow-xl">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <BookOpen className="h-5 w-5 mr-2 text-green-400" />
+                                        Short Notes Sample
+                                    </CardTitle>
+                                    <CardDescription>Generated from "Photosynthesis Chapter" PDF</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-3">
+                                        <div className="border-l-4 border-green-400 pl-4">
+                                            <h4 className="font-semibold text-green-400 mb-1">Key Definition</h4>
+                                            <p className="text-sm">
+                                                <strong>Photosynthesis:</strong> Process by which plants convert light energy into chemical energy (glucose) using chlorophyll.
+                                            </p>
+                                        </div>
+                                        <div className="border-l-4 border-blue-400 pl-4">
+                                            <h4 className="font-semibold text-blue-400 mb-1">Important Formula</h4>
+                                            <p className="text-sm font-mono bg-slate-700 p-2 rounded">
+                                                6CO₂ + 6H₂O + Light → C₆H₁₂O₆ + 6O₂
+                                            </p>
+                                        </div>
+                                        <div className="border-l-4 border-purple-400 pl-4">
+                                            <h4 className="font-semibold text-purple-400 mb-1">Key Points</h4>
+                                            <ul className="text-sm space-y-1">
+                                                <li>• Occurs in chloroplasts</li>
+                                                <li>• Two stages: Light & Dark reactions</li>
+                                                <li>• Produces oxygen as byproduct</li>
+                                            </ul>
                                         </div>
                                     </div>
                                 </CardContent>
@@ -218,7 +305,7 @@ export default function ProductShowcase() {
                                 </li>
                             </ul>
                             <Button
-                                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white"
                                 onClick={handleSubjectiveQA}
                             >
                                 Try Subjective Q&A
@@ -296,7 +383,7 @@ export default function ProductShowcase() {
                             </ul>
                             <Button
                                 size="lg"
-                                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600"
+                                className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:via-purple-600 hover:to-pink-600 text-white"
                                 onClick={handleFlowchartGenerator}
                             >
                                 Try Flowchart Generator
@@ -312,14 +399,11 @@ export default function ProductShowcase() {
                             <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 relative overflow-hidden shadow-xl">
                                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20"></div>
                                 <img
-                                    src="/placeholder.svg?height=400&width=600"
+                                    src="https://marketplace.canva.com/EAFs8i1Wibk/2/0/1600w/canva-black-doodle-tools-for-generating-ideas-mind-map-T3PGwmgJmUM.jpg"
                                     alt="Flowchart Example"
                                     className="w-full h-auto rounded border border-slate-600"
                                 />
-                                <div className="mt-4 text-center relative z-10">
-                                    <h4 className="font-semibold">Neural Network Architecture Flowchart</h4>
-                                    <p className="text-sm text-gray-300">Generated from "Deep Teaching Fundamentals" PDF</p>
-                                </div>
+                                
                             </div>
                         </motion.div>
                     </div>
@@ -341,7 +425,7 @@ export default function ProductShowcase() {
                         </p>
                         <Button
                             size="lg"
-                            className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700"
+                            className="bg-gradient-to-r from-purple-500 to-blue-600 hover:from-purple-600 hover:to-blue-700 text-white"
                             onClick={handleGetStarted}
                         >
                             Get Started Today
