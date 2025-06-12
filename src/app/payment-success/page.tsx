@@ -27,7 +27,6 @@ function PaymentSuccessContent() {
     const coins = searchParams?.get("coins");
     const planName = searchParams?.get("plan");
     const transactionId = searchParams?.get("transaction_id");
-
     if (amount && coins && planName) {
       const details = {
         amount: parseInt(amount),
