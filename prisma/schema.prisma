@@ -4,7 +4,7 @@ generator client {
 
 datasource db {
   provider = "mongodb"
-  url      = env("DATABASE_URL")
+  url      = "mongodb+srv://bansalarnav221:BLy7ePM8SQuslC3N@notesacademy-prod.jw6ymca.mongodb.net/notesacademy-prod"
 }
 model User {
   id            String    @id @default(auto()) @map("_id") @db.ObjectId
