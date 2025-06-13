@@ -87,7 +87,7 @@ const structuredData = {
   "@context": "https://schema.org",
   "@type": "EducationalOrganization",
   "name": "NotesAcademy",
-  "alternateName": "Notes Institute",
+  "alternateName": "Notes Academy",
   "url": process.env.NEXT_PUBLIC_BASE_URL || "https://notesacademy.com",
   "logo": {
     "@type": "ImageObject",

@@ -121,7 +121,7 @@ export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData
   `;
 
   const mailOptions = {
-    from: `"Notes Institute" <${process.env.EMAIL_USER}>`,
+    from: `"Notes Academy" <${process.env.EMAIL_USER}>`,
     to: email,
     subject: `Payment Confirmation - ${coinsAdded} Coins Added to Your Account`,
     html: htmlContent,
