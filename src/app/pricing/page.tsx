@@ -286,9 +286,7 @@ export function PricingContent() {
           
           <h1 className="text-4xl md:text-5xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500 bg-clip-text text-transparent leading-tight">
             {reason === "account_required" ? "Create Your Account" : "Choose Your Teaching Package"}
-          </h1>
-          
-          
+          </h1>          
         </motion.div>
         <motion.div
           className="mb-8 p-6 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-500/40 rounded-xl"
