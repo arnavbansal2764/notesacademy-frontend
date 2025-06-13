@@ -60,7 +60,6 @@ export function QuickPaymentModal({ isOpen, onClose, plan }: QuickPaymentModalPr
       toast.error("Please enter a valid email address")
       return
     }
-
     setIsProcessing(true)
 
     try {
