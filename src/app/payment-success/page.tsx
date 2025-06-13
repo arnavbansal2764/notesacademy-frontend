@@ -18,7 +18,7 @@ interface PaymentDetails {
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const [countdown, setCountdown] = useState(5);
+  const [countdown, setCountdown] = useState(60);
   const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
 
   useEffect(() => {
