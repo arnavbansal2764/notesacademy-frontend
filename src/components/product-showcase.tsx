@@ -14,7 +14,16 @@ export default function ProductShowcase() {
         if (session) {
             router.push("/mcq-generator")
         } else {
-            router.push("/auth")
+            // Scroll to pricing section on the same page
+            const pricingSection = document.querySelector('section[id*="pricing"]') || 
+                                 document.querySelector('[data-pricing]') ||
+                                 document.querySelector('.pricing-section');
+            if (pricingSection) {
+                pricingSection.scrollIntoView({ behavior: "smooth" })
+            } else {
+                // Fallback to auth if pricing section not found
+                router.push("/auth")
+            }
         }
     }
 
@@ -22,7 +31,16 @@ export default function ProductShowcase() {
         if (session) {
             router.push("/short-notes-generator")
         } else {
-            router.push("/auth")
+            // Scroll to pricing section on the same page
+            const pricingSection = document.querySelector('section[id*="pricing"]') || 
+                                 document.querySelector('[data-pricing]') ||
+                                 document.querySelector('.pricing-section');
+            if (pricingSection) {
+                pricingSection.scrollIntoView({ behavior: "smooth" })
+            } else {
+                // Fallback to auth if pricing section not found
+                router.push("/auth")
+            }
         }
     }
 
@@ -30,7 +48,16 @@ export default function ProductShowcase() {
         if (session) {
             router.push("/subjective-qa")
         } else {
-            router.push("/auth")
+            // Scroll to pricing section on the same page
+            const pricingSection = document.querySelector('section[id*="pricing"]') || 
+                                 document.querySelector('[data-pricing]') ||
+                                 document.querySelector('.pricing-section');
+            if (pricingSection) {
+                pricingSection.scrollIntoView({ behavior: "smooth" })
+            } else {
+                // Fallback to auth if pricing section not found
+                router.push("/auth")
+            }
         }
     }
 
@@ -38,7 +65,16 @@ export default function ProductShowcase() {
         if (session) {
             router.push("/flowchart-generator")
         } else {
-            router.push("/auth")
+            // Scroll to pricing section on the same page
+            const pricingSection = document.querySelector('section[id*="pricing"]') || 
+                                 document.querySelector('[data-pricing]') ||
+                                 document.querySelector('.pricing-section');
+            if (pricingSection) {
+                pricingSection.scrollIntoView({ behavior: "smooth" })
+            } else {
+                // Fallback to auth if pricing section not found
+                router.push("/auth")
+            }
         }
     }
 
@@ -46,7 +82,16 @@ export default function ProductShowcase() {
         if (session) {
             router.push("/dashboard")
         } else {
-            router.push("/auth")
+            // Scroll to pricing section on the same page
+            const pricingSection = document.querySelector('section[id*="pricing"]') || 
+                                 document.querySelector('[data-pricing]') ||
+                                 document.querySelector('.pricing-section');
+            if (pricingSection) {
+                pricingSection.scrollIntoView({ behavior: "smooth" })
+            } else {
+                // Fallback to auth if pricing section not found
+                router.push("/auth")
+            }
         }
     }
 
@@ -420,7 +465,7 @@ export default function ProductShowcase() {
                     <div className="max-w-3xl mx-auto bg-gradient-to-r from-purple-900/50 to-blue-900/50 p-8 rounded-xl border border-purple-700/50 shadow-lg">
                         <h3 className="text-2xl md:text-3xl font-bold mb-4">Ready to Transform Your Teaching Experience?</h3>
                         <p className="text-gray-300 mb-6">
-                            Join thousands of teacher who are already using our platform to enhance their teaching efficiency and their student's 
+                            Join thousands of teachers who are already using our platform to enhance their teaching efficiency and their student's 
                             knowledge retention.
                         </p>
                         <Button

@@ -32,9 +32,11 @@ export default function Home() {
       <Navbar />
       <HeroSection />
       <ProductShowcase />
-      <Suspense fallback={<PricingFallback />}>
-        <PricingContent />
-      </Suspense>
+      <div id="pricing-section" data-pricing>
+        <Suspense fallback={<PricingFallback />}>
+          <PricingContent />
+        </Suspense>
+      </div>
       <Footer />
     </main>
   )

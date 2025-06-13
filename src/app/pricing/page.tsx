@@ -38,7 +38,7 @@ const pricingPlans: PricingPlan[] = [
     id: "starter",
     name: "Starter Pack",
     coins: 5,
-    price: 10,
+    price: 99,
     icon: Zap,
     color: "blue",
     gradient: "from-blue-500 to-cyan-500",
@@ -237,7 +237,7 @@ export function PricingContent() {
   };
 
   return (
-    <main className="container mx-auto px-4 py-16">
+    <main className="container mx-auto px-4 py-16" id="pricing-section" data-pricing>
       {/* Load Razorpay script */}
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
@@ -288,16 +288,7 @@ export function PricingContent() {
             {reason === "account_required" ? "Create Your Account" : "Choose Your Teaching Package"}
           </h1>
           
-          <div className="flex items-center justify-center gap-2 text-sm text-gray-400">
-            <span className="w-2 h-2 bg-green-500 rounded-full"></span>
-            <span>Secure payments via Razorpay</span>
-            <span className="mx-2">•</span>
-            <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
-            <span>Instant coin delivery</span>
-            <span className="mx-2">•</span>
-            <span className="w-2 h-2 bg-purple-500 rounded-full"></span>
-            <span>Account auto-creation</span>
-          </div>
+          
         </motion.div>
         <motion.div
           className="mb-8 p-6 bg-gradient-to-r from-yellow-900/30 to-orange-900/30 border border-yellow-500/40 rounded-xl"
@@ -312,7 +303,7 @@ export function PricingContent() {
             </h2>
             <span className="text-4xl">⚡</span>
           </div>
-          <p className="text-yellow-200 text-lg text-center">
+          <p className="text-yellow-200 text-sm text-center">
             Use 1 coin to generate MCQs, Short Notes, Subjective Q&As, or Interactive Mindmaps from any PDF
           </p>
         </motion.div>
