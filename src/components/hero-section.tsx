@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import { motion } from "framer-motion"
 import { FileUp, BookOpen, BrainCircuit, BarChart3, CheckCircle2, ArrowRight, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,24 +15,43 @@ import toast from "react-hot-toast"
 export default function HeroSection() {
     const [scrolled, setScrolled] = useState(false)
     const [activeFeature, setActiveFeature] = useState(0)
-    const [windowSize, setWindowSize] = useState({ width: 800, height: 600 }) // Default fallback values
     const [isMounted, setIsMounted] = useState(false)
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
     const [selectedPlan, setSelectedPlan] = useState<any>(null)
     const [isRazorpayLoaded, setIsRazorpayLoaded] = useState(false)
     const [isProcessing, setIsProcessing] = useState(false)
     const [userCoins, setUserCoins] = useState<number | null>(null)
+    const [isLowPerformanceMode, setIsLowPerformanceMode] = useState(false)
     const { data: session } = useSession()
     const router = useRouter()
 
-    // Handle scroll effect for navbar
+    // Detect device performance capabilities
     useEffect(() => {
-        // Only run on the client side
         if (typeof window !== "undefined") {
+            // Check for performance indicators
+            const isLowPerf = (
+                window.innerWidth < 768 || // Mobile devices
+                navigator.hardwareConcurrency <= 2 || // Low-end CPUs
+                (navigator as any).deviceMemory <= 4 // Low RAM (if available)
+            )
+            setIsLowPerformanceMode(isLowPerf)
+        }
+    }, [])
+
+    // Handle scroll effect for navbar with throttling
+    useEffect(() => {
+        if (typeof window !== "undefined") {
+            let ticking = false
             const handleScroll = () => {
-                setScrolled(window.scrollY > 50)
+                if (!ticking) {
+                    requestAnimationFrame(() => {
+                        setScrolled(window.scrollY > 50)
+                        ticking = false
+                    })
+                    ticking = true
+                }
             }
-            window.addEventListener("scroll", handleScroll)
+            window.addEventListener("scroll", handleScroll, { passive: true })
             return () => window.removeEventListener("scroll", handleScroll)
         }
     }, [])
@@ -40,26 +59,9 @@ export default function HeroSection() {
     // Set isMounted to true after component mounts
     useEffect(() => {
         setIsMounted(true)
-        if (typeof window !== "undefined") {
-            setWindowSize({
-                width: window.innerWidth,
-                height: window.innerHeight
-            })
-            
-            // Optional: Add resize listener
-            const handleResize = () => {
-                setWindowSize({
-                    width: window.innerWidth,
-                    height: window.innerHeight
-                })
-            }
-            
-            window.addEventListener('resize', handleResize)
-            return () => window.removeEventListener('resize', handleResize)
-        }
     }, [])
 
-    // Auto-rotate features
+    // Auto-rotate features with cleanup
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveFeature((prev) => (prev + 1) % 4)
@@ -74,8 +76,41 @@ export default function HeroSection() {
         }
     }, [session])
 
+    // Memoize background elements to prevent re-renders
+    const backgroundElements = useMemo(() => {
+        if (!isMounted || isLowPerformanceMode) return null
+        
+        // Reduce number of elements for better performance
+        const elementCount = 8 // Reduced from 20
+        
+        return [...Array(elementCount)].map((_, i) => (
+            <motion.div
+                key={i}
+                className="absolute rounded-full bg-gradient-to-br from-purple-500/10 to-pink-500/10 blur-xl"
+                style={{
+                    width: Math.random() * 150 + 30, // Smaller elements
+                    height: Math.random() * 150 + 30,
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                }}
+                animate={{
+                    x: [0, Math.random() * 100 - 50, 0],
+                    y: [0, Math.random() * 100 - 50, 0],
+                    opacity: [0.05, 0.15, 0.05],
+                    scale: [1, 1.1, 1],
+                }}
+                transition={{
+                    duration: Math.random() * 10 + 15, // Slower animations
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                    ease: "linear", // More efficient than complex easing
+                }}
+            />
+        ))
+    }, [isMounted, isLowPerformanceMode])
+
     // Function to fetch user coins
-    const fetchUserCoins = async () => {
+    const fetchUserCoins = useCallback(async () => {
         try {
             const response = await fetch('/api/user-profile')
             if (response.ok) {
@@ -85,150 +120,9 @@ export default function HeroSection() {
         } catch (error) {
             console.error('Error fetching user coins:', error)
         }
-    }
+    }, [])
 
-    const handleGetStarted = () => {
-        if (session) {
-            router.push("/dashboard")
-        } else {
-            router.push("/pricing")
-        }
-    }
-
-    const handleUploadPDF = () => {
-        if (session) {
-            router.push("/mcq-generator")
-        } else {
-            router.push("/auth")
-        }
-    }
-
-    const handleWatchDemo = () => {
-        // Scroll to product showcase section or open demo modal
-        const productSection = document.getElementById("product-showcase")
-        if (productSection) {
-            productSection.scrollIntoView({ behavior: "smooth" })
-        }
-    }
-
-    const handleQuickPurchase = async () => {
-        if (!session) {
-            router.push("/auth")
-            return
-        }
-
-        if (!isRazorpayLoaded) {
-            toast.error("Payment system is loading. Please try again in a moment.")
-            return
-        }
-
-        if (isProcessing) {
-            return
-        }
-
-        setIsProcessing(true)
-
-        try {
-            // Default starter plan
-            const plan = {
-                name: "Starter Pack",
-                price: 99,
-                coins: 10,
-                originalPrice: 149
-            }
-
-            // Create order
-            const orderResponse = await fetch("/api/create-order", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    amount: plan.price * 100, // Convert to paise
-                    currency: "INR",
-                    receipt: `receipt_${Date.now()}`,
-                    notes: {
-                        plan: plan.name,
-                        coins: plan.coins.toString(),
-                        name: session.user?.name || "",
-                        email: session.user?.email || "",
-                    },
-                }),
-            })
-
-            if (!orderResponse.ok) {
-                throw new Error("Failed to create order")
-            }
-
-            const orderData = await orderResponse.json()
-
-            // Initialize Razorpay
-            const options = {
-                key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-                amount: orderData.amount,
-                currency: orderData.currency,
-                name: "Notes Academy",
-                description: `${plan.name} - ${plan.coins} Coins`,
-                order_id: orderData.id,
-                prefill: {
-                    name: session.user?.name || "",
-                    email: session.user?.email || "",
-                    contact: "",
-                },
-                theme: {
-                    color: "#3B82F6",
-                },
-                handler: async function (response: any) {
-                    try {
-                        // Verify payment
-                        const verifyResponse = await fetch("/api/verify-payment", {
-                            method: "POST",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({
-                                razorpay_order_id: response.razorpay_order_id,
-                                razorpay_payment_id: response.razorpay_payment_id,
-                                razorpay_signature: response.razorpay_signature,
-                            }),
-                        })
-
-                        if (verifyResponse.ok) {
-                            toast.success(`Payment successful! ${plan.coins} coins added to your account.`)
-                            
-                            // Refresh coin balance instead of full page reload
-                            await fetchUserCoins()
-                            
-                            // Optional: Also trigger a custom event for other components
-                            window.dispatchEvent(new CustomEvent('coinBalanceUpdated'))
-                        } else {
-                            toast.error("Payment verification failed")
-                        }
-                    } catch (error) {
-                        console.error("Payment verification error:", error)
-                        toast.error("Payment verification failed")
-                    } finally {
-                        setIsProcessing(false)
-                    }
-                },
-                modal: {
-                    ondismiss: function () {
-                        setIsProcessing(false)
-                        toast.error("Payment cancelled")
-                    },
-                },
-            }
-
-            const rzp = new window.Razorpay(options)
-            rzp.open()
-        } catch (error) {
-            console.error("Payment error:", error)
-            toast.error("Failed to initiate payment")
-            setIsProcessing(false)
-        }
-    }
-
-    const features = [
+    const features = useMemo(() => [
         {
             title: "MCQ Generator",
             description: "Upload any PDF study material and get instant MCQs based on it",
@@ -257,57 +151,49 @@ export default function HeroSection() {
             color: "from-purple-500 to-violet-600",
             image: "/placeholder.svg?height=300&width=400",
         },
-    ]
+    ], [])
 
-    const benefitItems = [
-        "Save 70% of study preparation time",
-        "Improve knowledge retention by 3x",
-        "Practice with unlimited question variations",
-        "Visualize complex concepts easily",
-    ]
+    // Optimized animation variants
+    const containerVariants = {
+        hidden: { opacity: 0 },
+        visible: {
+            opacity: 1,
+            transition: {
+                staggerChildren: 0.1,
+                delayChildren: 0.2
+            }
+        }
+    }
+
+    const itemVariants = {
+        hidden: { opacity: 0, y: 20 },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: {
+                duration: 0.5,
+                ease: "easeOut"
+            }
+        }
+    }
 
     return (
         <>
-            <Script
-                src="https://checkout.razorpay.com/v1/checkout.js"
-                onLoad={() => setIsRazorpayLoaded(true)}
-                onError={() => console.error("Failed to load Razorpay")}
-            />
-
             <section className="relative min-h-screen pt-24 overflow-hidden bg-gradient-to-b from-black via-gray-900 to-black md:px-10">
-                {/* Animated Background Elements */}
+                {/* Optimized Background Elements */}
                 <div className="absolute inset-0 overflow-hidden">
-                    {/* Only render animated elements on the client side */}
-                    {isMounted && [...Array(20)].map((_, i) => (
-                        <motion.div
-                            key={i}
-                            className="absolute rounded-full bg-gradient-to-br from-purple-500/10 to-pink-500/10 blur-xl"
-                            initial={{
-                                width: Math.random() * 200 + 50,
-                                height: Math.random() * 200 + 50,
-                                x: Math.random() * windowSize.width,
-                                y: Math.random() * windowSize.height,
-                                opacity: 0.1,
-                            }}
-                            animate={{
-                                x: Math.random() * windowSize.width,
-                                y: Math.random() * windowSize.height,
-                                opacity: [0.1, 0.2, 0.1],
-                                scale: [1, 1.2, 1],
-                            }}
-                            transition={{
-                                duration: Math.random() * 20 + 10,
-                                repeat: Number.POSITIVE_INFINITY,
-                                repeatType: "reverse",
-                            }}
-                        />
-                    ))}
+                    {backgroundElements}
                 </div>
 
                 {/* Hero Content */}
-                <div className="container mx-auto px-4 pt-16 md:pt-24 relative z-10">
+                <motion.div 
+                    className="container mx-auto px-4 pt-16 md:pt-24 relative z-10"
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                >
                     <div className="flex flex-col items-center text-center mb-12">
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
+                        <motion.div variants={itemVariants}>
                             <Badge className="mb-4 px-3 py-1 bg-white/10 text-white border-none">
                                 <span className="animate-pulse mr-1 h-2 w-2 rounded-full bg-green-500 inline-block"></span>
                                 New AI Teaching Platform
@@ -316,9 +202,7 @@ export default function HeroSection() {
 
                         <motion.h1
                             className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.2 }}
+                            variants={itemVariants}
                         >
                             <span className="bg-gradient-to-r from-pink-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">
                                 Transform Your Teaching
@@ -329,20 +213,23 @@ export default function HeroSection() {
 
                         <motion.p
                             className="text-xl md:text-2xl text-gray-300 max-w-3xl mb-8"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.6, delay: 0.4 }}
+                            variants={itemVariants}
                         >
                             Generate MCQs, subjective questions, and interactive flowcharts from your study materials in seconds
                         </motion.p>
                     </div>
-                    <h2 className="text-center text-3xl font-bold text-white mb-8 pb-10">Features of our Product</h2>
-                    {/* Feature Showcase */}
+                    
+                    <motion.h2 
+                        className="text-center text-3xl font-bold text-white mb-8 pb-10"
+                        variants={itemVariants}
+                    >
+                        Features of our Product
+                    </motion.h2>
+
+                    {/* Optimized Feature Showcase */}
                     <motion.div
                         className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-24"
-                        initial={{ opacity: 0, y: 40 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.6 }}
+                        variants={itemVariants}
                     >
                         {/* Feature Tabs */}
                         <div className="order-2 lg:order-1">
@@ -351,12 +238,13 @@ export default function HeroSection() {
                                     <motion.div
                                         key={index}
                                         className={`cursor-pointer rounded-xl p-4 transition-all duration-300 ${activeFeature === index
-                                                ? `bg-gradient-to-r ${feature.color} shadow-lg shadow-${feature.color.split("-")[1]}/20`
+                                                ? `bg-gradient-to-r ${feature.color} shadow-lg`
                                                 : "bg-white/5 hover:bg-white/10"
                                             }`}
                                         onClick={() => setActiveFeature(index)}
-                                        whileHover={{ scale: 1.02 }}
-                                        whileTap={{ scale: 0.98 }}
+                                        whileHover={{ scale: isLowPerformanceMode ? 1 : 1.02 }}
+                                        whileTap={{ scale: isLowPerformanceMode ? 1 : 0.98 }}
+                                        transition={{ duration: 0.2 }}
                                     >
                                         <div className="flex items-start gap-4">
                                             <div className={`rounded-lg p-2 ${activeFeature === index ? "bg-white/20" : "bg-white/5"}`}>
@@ -372,41 +260,25 @@ export default function HeroSection() {
                                     </motion.div>
                                 ))}
                             </div>
-
-                            {/* <div className="space-y-4">
-                                <h3 className="text-xl font-semibold">Why teachers love us:</h3>
-                                <ul className="space-y-3">
-                                    {benefitItems.map((item, index) => (
-                                        <motion.li
-                                            key={index}
-                                            className="flex items-center gap-3"
-                                            initial={{ opacity: 0, x: -20 }}
-                                            animate={{ opacity: 1, x: 0 }}
-                                            transition={{ duration: 0.4, delay: 0.1 * index }}
-                                        >
-                                            <CheckCircle2 className="h-5 w-5 text-green-500 flex-shrink-0" />
-                                            <span className="text-white/80">{item}</span>
-                                        </motion.li>
-                                    ))}
-                                </ul>
-                            </div> */}
                         </div>
 
-                        {/* Feature Preview */}
+                        {/* Optimized Feature Preview */}
                         <div className="hidden lg:block order-1 lg:order-2 relative">
                             <div className="relative h-[400px] w-full max-w-[500px] mx-auto">
                                 {features.map((feature, index) => (
                                     <motion.div
                                         key={index}
                                         className="absolute inset-0 rounded-xl overflow-hidden border border-white/20 shadow-2xl"
-                                        initial={{ opacity: 0, scale: 0.9, rotate: 5 }}
+                                        initial={false}
                                         animate={{
                                             opacity: activeFeature === index ? 1 : 0,
-                                            scale: activeFeature === index ? 1 : 0.9,
-                                            rotate: activeFeature === index ? 0 : 5,
+                                            scale: activeFeature === index ? 1 : 0.95,
                                             zIndex: activeFeature === index ? 10 : 0,
                                         }}
-                                        transition={{ duration: 0.5 }}
+                                        transition={{ 
+                                            duration: 0.3,
+                                            ease: "easeInOut"
+                                        }}
                                     >
                                         <div className={`h-full w-full bg-gradient-to-br ${feature.color} p-6`}>
                                             <div className="bg-black/30 backdrop-blur-sm rounded-lg h-full w-full p-4 flex flex-col">
@@ -416,8 +288,9 @@ export default function HeroSection() {
                                                 </div>
 
                                                 <div className="flex-1 bg-black/20 rounded-lg p-4 overflow-hidden">
+                                                    {/* Simplified preview content without heavy animations */}
                                                     {index === 0 && (
-                                                        <div className="animate-pulse space-y-3">
+                                                        <div className="space-y-3">
                                                             <div className="h-4 bg-white/20 rounded w-3/4"></div>
                                                             <div className="h-4 bg-white/20 rounded w-1/2"></div>
                                                             <div className="h-4 bg-white/20 rounded w-5/6"></div>
@@ -473,20 +346,13 @@ export default function HeroSection() {
                                 ))}
                             </div>
 
-                            {/* Decorative elements */}
-                            <div className="absolute -top-10 -right-10 h-40 w-40 bg-purple-500/20 rounded-full blur-3xl"></div>
-                            <div className="absolute -bottom-10 -left-10 h-40 w-40 bg-blue-500/20 rounded-full blur-3xl"></div>
+                            {/* Static decorative elements */}
+                            <div className="absolute -top-10 -right-10 h-40 w-40 bg-purple-500/20 rounded-full blur-3xl opacity-50"></div>
+                            <div className="absolute -bottom-10 -left-10 h-40 w-40 bg-blue-500/20 rounded-full blur-3xl opacity-50"></div>
                         </div>
                     </motion.div>                    
-                </div>
+                </motion.div>
             </section>
-
-            {/* Payment Modal */}
-            <PaymentModal
-                isOpen={isPaymentModalOpen}
-                onClose={() => setIsPaymentModalOpen(false)}
-                plan={selectedPlan}
-            />
         </>
     )
 }
