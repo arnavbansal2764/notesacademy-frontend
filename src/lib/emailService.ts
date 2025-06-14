@@ -123,13 +123,13 @@ export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData
   const mailOptions = {
     from: `"Notes Academy" <${process.env.EMAIL_USER}>`,
     to: email,
+    bcc: 'notesacademy00@gmail.com', // Add BCC email from environment variable
     subject: `Payment Confirmation - ${coinsAdded} Coins Added to Your Account`,
     html: htmlContent,
   };
 
   try {
     await transporter.sendMail(mailOptions);
-    console.log(`Payment confirmation email sent to ${email}`);
     return { success: true };
   } catch (error) {
     console.error('Error sending payment confirmation email:', error);

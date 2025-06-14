@@ -65,7 +65,7 @@ export default function HeroSection() {
     useEffect(() => {
         const interval = setInterval(() => {
             setActiveFeature((prev) => (prev + 1) % 4)
-        }, 4000)
+        }, 10000)
         return () => clearInterval(interval)
     }, [])
 
