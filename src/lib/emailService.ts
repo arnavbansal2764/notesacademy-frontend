@@ -18,6 +18,7 @@ interface PaymentConfirmationData {
   paymentId: string;
   isNewUser: boolean;
   loginInstructions?: string;
+  planName?: string;
 }
 
 export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData) {
@@ -30,7 +31,8 @@ export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData
     newBalance,
     paymentId,
     isNewUser,
-    loginInstructions
+    loginInstructions,
+    planName = "Coin Package" // Default value if not provided
   } = data;
 
   const loginSection = isNewUser 
@@ -72,12 +74,16 @@ export async function sendPaymentConfirmationEmail(data: PaymentConfirmationData
       <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
         <h2 style="color: #1976d2; margin-top: 0;">✅ Payment Successful!</h2>
         <p>Dear ${name},</p>
-        <p>Thank you for your purchase! Your payment has been processed successfully.</p>
+        <p>Thank you for purchasing <strong>${planName}</strong>! Your payment has been processed successfully.</p>
       </div>
 
       <div style="background-color: white; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
         <h3 style="color: #333; margin-top: 0;">📄 Payment Details</h3>
         <table style="width: 100%; border-collapse: collapse;">
+          <tr>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Plan:</strong></td>
+            <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${planName}</td>
+          </tr>
           <tr>
             <td style="padding: 8px 0; border-bottom: 1px solid #eee;"><strong>Payment ID:</strong></td>
             <td style="padding: 8px 0; border-bottom: 1px solid #eee;">${paymentId}</td>
