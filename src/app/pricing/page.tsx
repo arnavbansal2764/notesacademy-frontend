@@ -37,14 +37,15 @@ const pricingPlans: PricingPlan[] = [
   {
     id: "starter",
     name: "Starter Pack",
-    coins: 5,
-    price: 99,
+    coins: 20,
+    price: 299,
+    originalPrice: 450,
     icon: Zap,
     color: "blue",
     gradient: "from-blue-500 to-cyan-500",
-    description: "Perfect for trying out our AI tools",
+    description: "Perfect for getting started with AI tools",
     features: [
-      "5 AI-powered generations",
+      "20 AI-powered generations",
       "MCQ Quiz Generator",
       "Subjective Q&A Generator", 
       "Short Notes Generator",
@@ -55,15 +56,15 @@ const pricingPlans: PricingPlan[] = [
   {
     id: "popular",
     name: "Popular Pack",
-    coins: 20,
-    price: 299,
-    originalPrice: 396,
+    coins: 50,
+    price: 599,
+    originalPrice: 875,
     icon: Star,
     color: "purple",
     gradient: "from-purple-500 to-pink-500",
     description: "Most popular choice for teachers",
     features: [
-      "20 AI-powered generations",
+      "50 AI-powered generations",
       "All Starter features",
       "Priority processing",
       "Advanced analytics",
@@ -74,19 +75,18 @@ const pricingPlans: PricingPlan[] = [
   {
     id: "premium",
     name: "Premium Pack",
-    coins: 50,
-    price: 599,
-    originalPrice: 990,
+    coins: 100,
+    price: 999,
+    originalPrice: 1500,
     icon: Crown,
     color: "gold",
     gradient: "from-yellow-500 to-orange-500",
-    description: "Ultimate package for serious tutors",
+    description: "Ultimate package for serious educators",
     features: [
-      "50 AI-powered generations",
+      "100 AI-powered generations",
       "All Popular features",
-      "Premium support",
+      "Premium support (24/7)",
       "Early access to new features",
-      "Custom export options"
     ]
   }
 ];
