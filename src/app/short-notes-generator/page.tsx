@@ -282,7 +282,7 @@ export default function ShortNotesGeneratorPage() {
 
             {/* AI Visualization Loaders */}
             <AIVisualizationLoader isLoading={isUploading} message="Uploading your PDF" variant="upload" theme="blue" />
-
+            
             <AIVisualizationLoader
                 isLoading={isGenerating}
                 message="AI is creating short notes"
@@ -314,8 +314,9 @@ export default function ShortNotesGeneratorPage() {
                         Transform your lengthy study materials into concise, easy-to-review notes. Our AI analyzes your PDF
                         and creates summarized notes with key points and important concepts.
                     </motion.p>
-
+                    
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <p className="text-sm text-gray-400">You can view your generated content in your dashboard.</p>
                         <TabsList className="grid w-full grid-cols-2 mb-8">
                             <TabsTrigger value="upload">Upload PDF</TabsTrigger>
                             <TabsTrigger value="generated" disabled={!notesUrl}>
@@ -457,6 +458,7 @@ export default function ShortNotesGeneratorPage() {
                                     >
                                         <h2 className="text-2xl font-bold">Short Notes Generated</h2>
                                     </motion.div>
+                                    
 
                                     <motion.div variants={itemVariants}>
                                         <Card className="bg-slate-800 border-slate-700">

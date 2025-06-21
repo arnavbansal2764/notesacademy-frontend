@@ -275,6 +275,9 @@ export default function FlowchartGeneratorPage() {
                         Transform complex concepts into visual, easy-to-understand flowcharts and mindmaps. Our AI analyzes your PDF
                         content and creates beautiful, interactive visualizations.
                     </motion.p>
+                    <motion.p className="text-gray-400 mb-8 italic">
+                      Note: You can view all your generated content in your dashboard.
+                    </motion.p>
 
                     <AnimatePresence mode="wait">
                         {currentStep === "upload" && (

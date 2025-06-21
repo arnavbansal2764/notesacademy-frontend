@@ -342,6 +342,10 @@ export default function SubjectiveQAPage() {
                         deepen your understanding.
                     </motion.p>
 
+                    <motion.p className="text-gray-400 mb-8 italic">
+                        Note: You can view all your generated questions in your dashboard.
+                    </motion.p>
+
                     <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                         <TabsList className="grid w-full grid-cols-2 mb-8">
                             <TabsTrigger value="upload">Upload PDF</TabsTrigger>
