@@ -124,12 +124,20 @@ export default function HeroSection() {
 
     const features = useMemo(() => [
         {
+            title: "Instant PPT Generator",
+            description: "Create professional powerpoint presentations instantly on any topic",
+            icon: <BrainCircuit className="h-8 w-8 text-purple-500" />,
+            color: "from-purple-500 to-indigo-600",
+            image: "/placeholder.svg?height=300&width=400",
+        },
+        {
             title: "MCQ Generator",
             description: "Upload any PDF study material and get instant MCQs based on it",
             icon: <BookOpen className="h-8 w-8 text-rose-500" />,
             color: "from-rose-500 to-pink-600",
             image: "/placeholder.svg?height=300&width=400",
         },
+       
         {
             title: "Short Notes Generator",
             description: "Trims down your study material into concise, easy to learn pointers",
@@ -144,6 +152,7 @@ export default function HeroSection() {
             color: "from-green-500 to-teal-600",
             image: "/placeholder.svg?height=300&width=400",
         },
+
         {
             title: "Subjective Questions Generator",
             description: "Generates subjective questions along with it's detailed answers",

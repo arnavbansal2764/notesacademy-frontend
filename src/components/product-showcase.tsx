@@ -1,6 +1,6 @@
 "use client"
 import { motion } from "framer-motion"
-import { FileText, List, HelpCircle, GitBranch, BookOpen } from "lucide-react"
+import { FileText, List, HelpCircle, GitBranch, BookOpen, Presentation } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useSession } from "next-auth/react"
@@ -78,6 +78,23 @@ export default function ProductShowcase() {
         }
     }
 
+    const handlePPTGenerator = () => {
+        if (session) {
+            router.push("/ppt-generator")
+        } else {
+            // Scroll to pricing section on the same page
+            const pricingSection = document.querySelector('section[id*="pricing"]') || 
+                                 document.querySelector('[data-pricing]') ||
+                                 document.querySelector('.pricing-section');
+            if (pricingSection) {
+                pricingSection.scrollIntoView({ behavior: "smooth" })
+            } else {
+                // Fallback to auth if pricing section not found
+                router.push("/auth")
+            }
+        }
+    }
+
     const handleGetStarted = () => {
         if (session) {
             router.push("/dashboard")
@@ -107,6 +124,86 @@ export default function ProductShowcase() {
                 >
                     Explore Our AI-Powered Teaching Tools
                 </motion.h2>
+
+                {/* PPT Generator */}
+                <div id="ppt" className="mb-32">
+                    <div className="grid md:grid-cols-2 gap-12 items-center">
+                        <motion.div
+                            initial={{ opacity: 0, x: -50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8 }}
+                            viewport={{ once: true }}
+                        >
+                            <h3 className="text-2xl md:text-3xl font-bold mb-4">Instant PPT Generator</h3>
+                            <p className="text-gray-300 mb-6">
+                                Create professional PowerPoint presentations instantly from any topic. Our AI generates beautiful slides with content, images, and formatting ready for your class or meeting.
+                            </p>
+                            <ul className="space-y-3 mb-6">
+                                <li className="flex items-start">
+                                    <Presentation className="h-6 w-6 mr-2 text-pink-400 flex-shrink-0 mt-0.5" />
+                                    <span>Generates 3-30 professional slides from any topic</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <Presentation className="h-6 w-6 mr-2 text-pink-400 flex-shrink-0 mt-0.5" />
+                                    <span>Includes relevant images and visual elements</span>
+                                </li>
+                                <li className="flex items-start">
+                                    <Presentation className="h-6 w-6 mr-2 text-pink-400 flex-shrink-0 mt-0.5" />
+                                    <span>Downloads as both PowerPoint and PDF formats</span>
+                                </li>
+                            </ul>
+                            <Button
+                                className="bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white"
+                                onClick={handlePPTGenerator}
+                            >
+                                Try PPT Generator
+                            </Button>
+                        </motion.div>
+
+                        <motion.div
+                            initial={{ opacity: 0, x: 50 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.8 }}
+                            viewport={{ once: true }}
+                        >
+                            <Card className="bg-slate-800 border-slate-700 shadow-xl">
+                                <CardHeader>
+                                    <CardTitle className="flex items-center">
+                                        <Presentation className="h-5 w-5 mr-2 text-pink-400" />
+                                        PPT Sample
+                                    </CardTitle>
+                                    <CardDescription>Generated presentation on "Artificial Intelligence in Healthcare"</CardDescription>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <div className="space-y-3">
+                                        <div className="border border-slate-600 rounded p-3 bg-slate-700/50">
+                                            <h4 className="font-semibold text-pink-400 mb-2">Slide 1: Title Slide</h4>
+                                            <p className="text-sm text-gray-300">
+                                                "Artificial Intelligence in Healthcare: Transforming Patient Care"
+                                            </p>
+                                        </div>
+                                        <div className="border border-slate-600 rounded p-3 bg-slate-700/50">
+                                            <h4 className="font-semibold text-blue-400 mb-2">Slide 2: Introduction</h4>
+                                            <ul className="text-sm text-gray-300 space-y-1">
+                                                <li>• Current healthcare challenges</li>
+                                                <li>• Role of AI in modern medicine</li>
+                                                <li>• Benefits and opportunities</li>
+                                            </ul>
+                                        </div>
+                                        <div className="border border-slate-600 rounded p-3 bg-slate-700/50">
+                                            <h4 className="font-semibold text-purple-400 mb-2">Slide 3: Applications</h4>
+                                            <ul className="text-sm text-gray-300 space-y-1">
+                                                <li>• Medical imaging analysis</li>
+                                                <li>• Drug discovery</li>
+                                                <li>• Personalized treatment</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        </motion.div>
+                    </div>
+                </div>
 
                 {/* MCQ Generator */}
                 <div id="mcq" className="mb-32">

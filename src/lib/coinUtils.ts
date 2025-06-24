@@ -5,6 +5,7 @@ export const FEATURE_COSTS = {
   SUBJECTIVE: 1,
   MINDMAP: 1,
   SHORT_NOTES: 1,
+  PPT : 2
 } as const;
 
 export type FeatureType = keyof typeof FEATURE_COSTS;

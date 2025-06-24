@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Menu, X, LogOut, LayoutDashboard, BrainCircuit, User, ChevronDown } from "lucide-react"
+import { Menu, X, LogOut, LayoutDashboard, BrainCircuit, User, ChevronDown, FileText, BookOpen, HelpCircle, GitBranch, Presentation } from "lucide-react"
 import { useSession, signOut } from "next-auth/react"
 import {
     DropdownMenu,
@@ -110,37 +110,58 @@ export default function Navbar() {
                         >
                             Home
                         </button>
-                        <button
-                            onClick={() => handleNavigation("/short-notes-generator")}
-                            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
-                        >
-                            Short Notes
-                        </button>
-                        <button
-                            onClick={() => handleNavigation("/mcq-generator")}
-                            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
-                        >
-                            MCQ Generator
-                        </button>
-                        <button
-                            onClick={() => handleNavigation("/subjective-qa")}
-                            className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
-                        >
-                            Subjective Q&A
-                        </button>
-                        <button
-                            onClick={() => handleNavigation("/flowchart-generator")}
-                            className="text-sm font-medium text-gray-300 hover:text-white transition-colors group"
-                        >
-                            <span className="relative">
-                                Flowcharts & Mindmaps
-                                <span className="absolute -top-1 -right-10 transition-opacity group-hover:opacity-100 opacity-80">
-                                    {/* <Badge className="text-xs bg-gradient-to-r from-indigo-400 to-purple-500 border-none px-1.5 py-0">
-                                        New
-                                    </Badge> */}
-                                </span>
-                            </span>
-                        </button>
+
+                        {/* Generate Content Dropdown */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button className="flex items-center gap-1 text-sm font-medium text-gray-300 hover:text-white transition-colors">
+                                    Generate Content
+                                    <ChevronDown className="h-4 w-4" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-56 bg-slate-800 border-slate-700" align="start">
+                                <DropdownMenuItem 
+                                    onClick={() => handleNavigation("/ppt-generator")}
+                                    className="text-gray-300 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer"
+                                >
+                                    <Presentation className="h-4 w-4 mr-2 text-pink-400" />
+                                    PPT Maker
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                    onClick={() => handleNavigation("/short-notes-generator")}
+                                    className="text-gray-300 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer"
+                                >
+                                    <BookOpen className="h-4 w-4 mr-2 text-green-400" />
+                                    Short Notes
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                    onClick={() => handleNavigation("/mcq-generator")}
+                                    className="text-gray-300 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer"
+                                >
+                                    <FileText className="h-4 w-4 mr-2 text-purple-400" />
+                                    MCQ Generator
+                                </DropdownMenuItem>
+                                <DropdownMenuItem 
+                                    onClick={() => handleNavigation("/subjective-qa")}
+                                    className="text-gray-300 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer"
+                                >
+                                    <HelpCircle className="h-4 w-4 mr-2 text-blue-400" />
+                                    Subjective Q&A
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator className="bg-slate-700" />
+                                <DropdownMenuItem 
+                                    onClick={() => handleNavigation("/flowchart-generator")}
+                                    className="text-gray-300 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer"
+                                >
+                                    <GitBranch className="h-4 w-4 mr-2 text-indigo-400" />
+                                    <div className="flex flex-col">
+                                        <span>Flowcharts & Mindmaps</span>
+                                        <span className="text-xs text-gray-500">Visual learning tools</span>
+                                    </div>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+
                         <Link
                             href="/pricing"
                             className="text-sm font-medium text-gray-300 hover:text-white transition-colors"
@@ -159,44 +180,36 @@ export default function Navbar() {
                                 )}
                                 
                                 {/* User Dropdown */}
-                                <div className="relative">
-                                    <button
-                                        onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                                        className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors"
-                                    >
-                                        <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-medium">
-                                            {session.user.name?.charAt(0)?.toUpperCase() || "U"}
-                                        </div>
-                                        <span className="hidden lg:block">{session.user.name}</span>
-                                        <ChevronDown className="h-4 w-4" />
-                                    </button>
-
-                                    <AnimatePresence>
-                                        {isDropdownOpen && (
-                                            <motion.div
-                                                initial={{ opacity: 0, y: -10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                className="absolute right-0 mt-2 w-48 bg-slate-800 rounded-lg shadow-lg border border-slate-700 py-1"
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="flex items-center space-x-2 text-gray-300 hover:text-white transition-colors">
+                                            <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center text-white font-medium">
+                                                {session.user.name?.charAt(0)?.toUpperCase() || "U"}
+                                            </div>
+                                            <span className="hidden lg:block">{session.user.name}</span>
+                                            <ChevronDown className="h-4 w-4" />
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent className="w-48 bg-slate-800 border-slate-700" align="end">
+                                        <DropdownMenuItem asChild>
+                                            <Link
+                                                href="/dashboard"
+                                                className="flex items-center px-2 py-2 text-gray-300 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer"
                                             >
-                                                <Link
-                                                    href="/dashboard"
-                                                    className="flex items-center px-4 py-2 text-gray-300 hover:bg-slate-700 hover:text-white transition-colors"
-                                                >
-                                                    <User className="h-4 w-4 mr-2" />
-                                                    Dashboard
-                                                </Link>
-                                                <button
-                                                    onClick={() => signOut()}
-                                                    className="flex items-center w-full px-4 py-2 text-gray-300 hover:bg-slate-700 hover:text-white transition-colors"
-                                                >
-                                                    <LogOut className="h-4 w-4 mr-2" />
-                                                    Sign Out
-                                                </button>
-                                            </motion.div>
-                                        )}
-                                    </AnimatePresence>
-                                </div>
+                                                <User className="h-4 w-4 mr-2" />
+                                                Dashboard
+                                            </Link>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator className="bg-slate-700" />
+                                        <DropdownMenuItem 
+                                            onClick={() => signOut()}
+                                            className="text-gray-300 hover:bg-slate-700 hover:text-white focus:bg-slate-700 focus:text-white cursor-pointer"
+                                        >
+                                            <LogOut className="h-4 w-4 mr-2" />
+                                            Sign Out
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                         ) : (
                             <Button
@@ -226,45 +239,70 @@ export default function Navbar() {
                             className="md:hidden border-t border-slate-800"
                         >
                             <div className="py-4 space-y-4">
-                                <button
-                                    onClick={() => handleNavigation("/mcq-generator")}
-                                    className="block text-gray-300 hover:text-white transition-colors"
-                                >
-                                    MCQ Generator
-                                </button>
-                                <button
-                                    onClick={() => handleNavigation("/subjective-qa")}
-                                    className="block text-gray-300 hover:text-white transition-colors"
-                                >
-                                    Subjective Q&A
-                                </button>
-                                <button
-                                    onClick={() => handleNavigation("/flowchart-generator")}
-                                    className="block text-gray-300 hover:text-white transition-colors"
-                                >
-                                    Mindmaps
-                                </button>
-                                <Link
-                                    href="/pricing"
-                                    className="block text-gray-300 hover:text-white transition-colors"
-                                    onClick={() => setIsMenuOpen(false)}
-                                >
-                                    Pricing
-                                </Link>
+                                {/* Mobile Generate Content Section */}
+                                <div className="space-y-2">
+                                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider px-2">Generate Content</p>
+                                    <button
+                                        onClick={() => handleNavigation("/ppt-generator")}
+                                        className="flex items-center w-full px-2 py-2 text-gray-300 hover:text-white transition-colors"
+                                    >
+                                        <Presentation className="h-4 w-4 mr-2 text-pink-400" />
+                                        PPT Maker
+                                    </button>
+                                    <button
+                                        onClick={() => handleNavigation("/short-notes-generator")}
+                                        className="flex items-center w-full px-2 py-2 text-gray-300 hover:text-white transition-colors"
+                                    >
+                                        <BookOpen className="h-4 w-4 mr-2 text-green-400" />
+                                        Short Notes
+                                    </button>
+                                    <button
+                                        onClick={() => handleNavigation("/mcq-generator")}
+                                        className="flex items-center w-full px-2 py-2 text-gray-300 hover:text-white transition-colors"
+                                    >
+                                        <FileText className="h-4 w-4 mr-2 text-purple-400" />
+                                        MCQ Generator
+                                    </button>
+                                    <button
+                                        onClick={() => handleNavigation("/subjective-qa")}
+                                        className="flex items-center w-full px-2 py-2 text-gray-300 hover:text-white transition-colors"
+                                    >
+                                        <HelpCircle className="h-4 w-4 mr-2 text-blue-400" />
+                                        Subjective Q&A
+                                    </button>
+                                    <button
+                                        onClick={() => handleNavigation("/flowchart-generator")}
+                                        className="flex items-center w-full px-2 py-2 text-gray-300 hover:text-white transition-colors"
+                                    >
+                                        <GitBranch className="h-4 w-4 mr-2 text-indigo-400" />
+                                        Flowcharts & Mindmaps
+                                    </button>
+                                </div>
+
+                                <div className="border-t border-slate-800 pt-4">
+                                    <Link
+                                        href="/pricing"
+                                        className="block text-gray-300 hover:text-white transition-colors px-2"
+                                        onClick={() => setIsMenuOpen(false)}
+                                    >
+                                        Pricing
+                                    </Link>
+                                </div>
                                 
                                 {isAuthenticated ? (
                                     <div className="pt-4 border-t border-slate-800 space-y-4">
                                         {userCoins !== null && (
-                                            <div className="flex items-center">
+                                            <div className="flex items-center px-2">
                                                 <span className="text-lg mr-2">🪙</span>
                                                 <span className="text-yellow-400 font-medium">{userCoins} coins</span>
                                             </div>
                                         )}
                                         <Link
                                             href="/dashboard"
-                                            className="block text-gray-300 hover:text-white transition-colors"
+                                            className="flex items-center px-2 py-2 text-gray-300 hover:text-white transition-colors"
                                             onClick={() => setIsMenuOpen(false)}
                                         >
+                                            <User className="h-4 w-4 mr-2" />
                                             Dashboard
                                         </Link>
                                         <button
@@ -272,8 +310,9 @@ export default function Navbar() {
                                                 signOut()
                                                 setIsMenuOpen(false)
                                             }}
-                                            className="block text-gray-300 hover:text-white transition-colors"
+                                            className="flex items-center w-full px-2 py-2 text-gray-300 hover:text-white transition-colors"
                                         >
+                                            <LogOut className="h-4 w-4 mr-2" />
                                             Sign Out
                                         </button>
                                     </div>

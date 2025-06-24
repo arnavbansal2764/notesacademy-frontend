@@ -66,6 +66,15 @@ interface ShortNotesResult {
   createdAt: string;
 }
 
+interface PPTResult {
+  id: string;
+  title: string;
+  pdfName: string | null;
+  pdfUrl: string;
+  pptUrl: string;
+  createdAt: string;
+}
+
 interface User {
   id: string;
   name: string;
@@ -95,12 +104,14 @@ export default function DashboardPage() {
   const [mcqResults, setMcqResults] = useState<MCQResult[]>([]);
   const [mindmapResults, setMindmapResults] = useState<MindmapResult[]>([]);
   const [shortNotesResults, setShortNotesResults] = useState<ShortNotesResult[]>([]);
+  const [pptResults, setPptResults] = useState<PPTResult[]>([]);
   const [userData, setUserData] = useState<User | null>(null);
   const [paymentHistory, setPaymentHistory] = useState<PaymentHistory[]>([]);
   const [isLoadingSubjective, setIsLoadingSubjective] = useState(true);
   const [isLoadingMCQ, setIsLoadingMCQ] = useState(true);
   const [isLoadingMindmaps, setIsLoadingMindmaps] = useState(true);
   const [isLoadingShortNotes, setIsLoadingShortNotes] = useState(true);
+  const [isLoadingPPTs, setIsLoadingPPTs] = useState(true);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [selectedSubjective, setSelectedSubjective] = useState<SubjectiveResult | null>(null);
   const [selectedMCQ, setSelectedMCQ] = useState<MCQResult | null>(null);
@@ -118,6 +129,7 @@ export default function DashboardPage() {
       fetchMCQResults();
       fetchMindmapResults();
       fetchShortNotesResults();
+      fetchPPTResults();
       fetchUserProfile();
     }
   }, [status, router]);
@@ -181,6 +193,22 @@ export default function DashboardPage() {
       console.error("Error fetching short notes results:", error);
     } finally {
       setIsLoadingShortNotes(false);
+    }
+  };
+
+  const fetchPPTResults = async () => {
+    setIsLoadingPPTs(true);
+    try {
+      const response = await fetch("/api/ppt-results");
+      if (!response.ok) {
+        throw new Error("Failed to fetch PPT results");
+      }
+      const data = await response.json();
+      setPptResults(data.results);
+    } catch (error) {
+      console.error("Error fetching PPT results:", error);
+    } finally {
+      setIsLoadingPPTs(false);
     }
   };
 
@@ -289,6 +317,22 @@ export default function DashboardPage() {
     }
   };
 
+  const handleDownloadPPT = (result: PPTResult, type: 'ppt' | 'pdf') => {
+    const url = type === 'ppt' ? result.pptUrl : result.pdfUrl;
+    const extension = type === 'ppt' ? '.pptx' : '.pdf';
+    const filename = `${result.title || 'presentation'}${extension}`;
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    toast.success(`${type.toUpperCase()} downloaded successfully!`);
+  };
+
   if (status === "loading") {
     return (
       <div className="min-h-screen bg-gradient-to-b from-slate-900 to-slate-800 text-white flex items-center justify-center">
@@ -329,7 +373,7 @@ export default function DashboardPage() {
           </motion.p>
 
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-5 mb-6 sm:mb-8 h-auto p-1 gap-1 sm:gap-0">
+            <TabsList className="grid w-full grid-cols-6 mb-6 sm:mb-8 h-auto p-1 gap-1 sm:gap-0">
               <TabsTrigger value="profile" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
                 <span className="hidden sm:inline">Profile</span>
                 <span className="sm:hidden">Profile</span>
@@ -349,6 +393,10 @@ export default function DashboardPage() {
               <TabsTrigger value="shortnotes" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
                 <span className="hidden sm:inline">Notes</span>
                 <span className="sm:hidden">Notes</span>
+              </TabsTrigger>
+              <TabsTrigger value="ppts" className="text-xs sm:text-sm px-1 sm:px-3 py-2">
+                <span className="hidden sm:inline">PPTs</span>
+                <span className="sm:hidden">PPTs</span>
               </TabsTrigger>
             </TabsList>
 
@@ -432,6 +480,10 @@ export default function DashboardPage() {
                         <div className="bg-slate-700/50 p-3 sm:p-4 rounded-lg text-center">
                           <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-400">{shortNotesResults.length}</p>
                           <p className="text-xs sm:text-sm text-gray-300">Short Notes</p>
+                        </div>
+                        <div className="bg-slate-700/50 p-3 sm:p-4 rounded-lg text-center">
+                          <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-orange-400">{pptResults.length}</p>
+                          <p className="text-xs sm:text-sm text-gray-300">Presentations</p>
                         </div>
 
                         {mcqResults.length > 0 && (
@@ -835,6 +887,92 @@ export default function DashboardPage() {
                     className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-sm sm:text-base"
                   >
                     Generate Short Notes
+                  </Button>
+                </div>
+              )}
+            </TabsContent>
+
+            <TabsContent value="ppts" className="px-2 sm:px-0">
+              {isLoadingPPTs ? (
+                <div className="flex justify-center py-12">
+                  <div className="w-8 h-8 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin"></div>
+                </div>
+              ) : pptResults.length > 0 ? (
+                <motion.div
+                  className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  {pptResults.map((result) => (
+                    <Card
+                      key={result.id}
+                      className="bg-slate-800 border-slate-700 hover:bg-slate-800/80 transition-colors"
+                    >
+                      <CardHeader className="pb-3">
+                        <CardTitle className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                          <span className="truncate text-sm sm:text-base">{result.title}</span>
+                          <span className="text-xs text-gray-400 flex items-center flex-shrink-0">
+                            <Clock className="h-3 w-3 mr-1" />
+                            {formatDistanceToNow(new Date(result.createdAt), { addSuffix: true })}
+                          </span>
+                        </CardTitle>
+                        <CardDescription className="text-gray-400 text-sm">
+                          Generated presentation slides
+                        </CardDescription>
+                      </CardHeader>
+                      <CardContent className="py-3">
+                        <p className="text-xs sm:text-sm text-gray-300 truncate">
+                          <FileText className="h-3 w-3 sm:h-4 sm:w-4 inline mr-2" />
+                          Topic: {result.title}
+                        </p>
+                      </CardContent>
+                      <CardFooter className="flex flex-col sm:flex-row gap-2 sm:justify-between pt-3">
+                        <div className="flex gap-2 w-full sm:w-auto">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadPPT(result, 'ppt')}
+                            className="bg-gradient-to-r from-orange-500/10 to-red-500/10 border-orange-500/30 hover:bg-orange-500/20 flex-1 sm:flex-none text-xs sm:text-sm"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            PPT
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDownloadPPT(result, 'pdf')}
+                            className="bg-gradient-to-r from-red-500/10 to-pink-500/10 border-red-500/30 hover:bg-red-500/20 flex-1 sm:flex-none text-xs sm:text-sm"
+                          >
+                            <Download className="h-3 w-3 mr-1" />
+                            PDF
+                          </Button>
+                        </div>
+                        <Button
+                          onClick={() => window.open(result.pptUrl, '_blank')}
+                          className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 w-full sm:w-auto text-xs sm:text-sm"
+                        >
+                          <Eye className="h-3 w-3 sm:h-4 sm:w-4 mr-2" />
+                          View PPT
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  ))}
+                </motion.div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="bg-slate-800 p-4 sm:p-6 rounded-full mb-4">
+                    <FileText className="h-6 w-6 sm:h-8 sm:w-8 text-gray-400" />
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-medium mb-2">No presentations yet</h3>
+                  <p className="text-gray-400 mb-4 sm:mb-6 max-w-md text-sm sm:text-base px-4">
+                    Generate PowerPoint presentations from topics and they will appear here
+                  </p>
+                  <Button
+                    onClick={() => router.push("/ppt-generator")}
+                    className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-sm sm:text-base"
+                  >
+                    Generate PPT
                   </Button>
                 </div>
               )}
