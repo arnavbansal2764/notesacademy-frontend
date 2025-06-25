@@ -224,7 +224,7 @@ export default function HeroSection() {
                             className="text-xl md:text-2xl text-gray-300 max-w-3xl mb-8"
                             variants={itemVariants}
                         >
-                            Generate MCQs, subjective questions, and interactive flowcharts from your study materials in seconds
+                            Generate Powerpoint Presentations, MCQs, subjective questions, and interactive flowcharts from your study materials in seconds
                         </motion.p>
                     </div>
                     
