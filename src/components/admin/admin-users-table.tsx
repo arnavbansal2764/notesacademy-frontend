@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Search, Users, Coins, Calendar, ChevronLeft, ChevronRight, FileText, Brain, Network, BookOpen } from 'lucide-react';
+import { Search, Users, Coins, Calendar, ChevronLeft, ChevronRight, FileText, Brain, Network, BookOpen, Presentation } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import toast from 'react-hot-toast';
 
@@ -23,6 +23,7 @@ interface User {
     subjectiveResults: number;
     mindmapResults: number;
     shortNotesResults: number;
+    pptResults: number;
   };
 }
 
@@ -175,6 +176,12 @@ export default function AdminUsersTable() {
                           <Badge variant="outline" className="text-xs bg-teal-900/30 text-teal-400 border-teal-600/30">
                             <BookOpen className="h-3 w-3 mr-1" />
                             {user._count.shortNotesResults}
+                          </Badge>
+                        )}
+                        {user._count.pptResults > 0 && (
+                          <Badge variant="outline" className="text-xs bg-orange-900/30 text-orange-400 border-orange-600/30">
+                            <Presentation className="h-3 w-3 mr-1" />
+                            {user._count.pptResults}
                           </Badge>
                         )}
                       </div>

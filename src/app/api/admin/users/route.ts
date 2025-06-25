@@ -40,11 +40,18 @@ export async function GET(req: NextRequest) {
           updatedAt: true,
           _count: {
             select: {
-              payments: true,
+              payments: {
+                where: {
+                  status: {
+                    in: ['captured', 'completed', 'succeeded']
+                  }
+                }
+              },
               mcqResults: true,
               subjectiveResults: true,
               mindmaps: true,
-              shortNotesResults: true
+              shortNotesResults: true,
+              pptResults: true
             }
           }
         }

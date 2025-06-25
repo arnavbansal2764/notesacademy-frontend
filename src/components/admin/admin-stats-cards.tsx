@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, CreditCard, Coins, FileText, Brain, Network, BookOpen, TrendingUp } from 'lucide-react';
+import { Users, CreditCard, Coins, FileText, Brain, Network, BookOpen, TrendingUp, Presentation } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface AdminStatsCardsProps {
@@ -76,6 +76,13 @@ export default function AdminStatsCards({ stats, isLoading }: AdminStatsCardsPro
       icon: BookOpen,
       color: 'from-teal-500 to-teal-600',
       description: 'Condensed notes'
+    },
+    {
+      title: 'Presentations',
+      value: stats.overview.totalPPTs,
+      icon: Presentation,
+      color: 'from-orange-500 to-orange-600',
+      description: 'Generated PPTs'
     },
     {
       title: 'Avg Revenue/User',
