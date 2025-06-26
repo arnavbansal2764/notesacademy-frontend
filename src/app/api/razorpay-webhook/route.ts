@@ -79,7 +79,7 @@ export async function POST(req: NextRequest) {
             
             if (!email || !coinsToAdd) {
                 console.error("Missing email or coins in payment notes");
-                return NextResponse.json({ message: "Invalid payment data" }, { status: 400 });
+                return NextResponse.json({ message: "Invalid payment data" }, { status: 200 });
             }
 
             // Check if payment already exists to prevent duplicate processing
