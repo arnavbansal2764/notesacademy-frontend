@@ -5,14 +5,14 @@ import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
 import { checkAndDeductCoins } from '@/lib/coinUtils';
 
-const accessId = process.env.MAGICSLIDES_ACCESS_ID || '62e6b24b-275f-482f-8c12-bcdf01e4591b';
+const accessId = process.env.MAGICSLIDES_ACCESS_ID || '5df474cf-65e2-4dfc-b0fc-b87a04817f2b';
 
 // platform @notesinstitute.in
 // 9384c726-a01e-4722-8c8c-c0a809434b04
 
 // bansalarnav221@gmail.com
 // 5df474cf-65e2-4dfc-b0fc-b87a04817f2b
-const magicslidesEmail = process.env.MAGICSLIDES_EMAIL || 'arnavbansal956@gmail.com';
+const magicslidesEmail = process.env.MAGICSLIDES_EMAIL || 'bansalarnav221@gmail.com';
 export async function POST(req: NextRequest) {
     try {
 
