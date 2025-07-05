@@ -165,6 +165,7 @@ export default function ProductShowcase() {
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8 }}
                             viewport={{ once: true }}
+                            className="hidden md:block"
                         >
                             <Card className="bg-slate-800 border-slate-700 shadow-xl">
                                 <CardHeader>
@@ -246,6 +247,7 @@ export default function ProductShowcase() {
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8 }}
                             viewport={{ once: true }}
+                            className="hidden md:block"
                         >
                             <Card className="bg-slate-800 border-slate-700 shadow-xl">
                                 <CardHeader>
@@ -337,6 +339,7 @@ export default function ProductShowcase() {
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8 }}
                             viewport={{ once: true }}
+                            className="hidden md:block"
                         >
                             <Card className="bg-slate-800 border-slate-700 shadow-xl">
                                 <CardHeader>
@@ -383,7 +386,7 @@ export default function ProductShowcase() {
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8 }}
                             viewport={{ once: true }}
-                            className="order-2 md:order-1"
+                            className="order-2 md:order-1 hidden md:block"
                         >
                             <Card className="bg-slate-800 border-slate-700 shadow-xl">
                                 <CardHeader>
@@ -537,6 +540,7 @@ export default function ProductShowcase() {
                             whileInView={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.8 }}
                             viewport={{ once: true }}
+                            className="hidden md:block"
                         >
                             <div className="bg-slate-800 border border-slate-700 rounded-lg p-4 relative overflow-hidden shadow-xl">
                                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20"></div>
@@ -545,7 +549,6 @@ export default function ProductShowcase() {
                                     alt="Flowchart Example"
                                     className="w-full h-auto rounded border border-slate-600"
                                 />
-                                
                             </div>
                         </motion.div>
                     </div>
