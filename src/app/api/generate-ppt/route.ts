@@ -59,29 +59,53 @@ const magicSlidesAccounts = [
     },
 ];
 
-// Inactive accounts tracker (1 month blacklist)
-const inactiveAccounts = new Map<string, number>(); // accountId -> timestamp when made inactive
+// Monthly usage tracker (resets on 1st of each month)
+const monthlyUsage = new Map<string, { month: string, count: number }>(); // accountId -> { month: 'YYYY-MM', count: number }
 
-const ONE_MONTH = 30 * 24 * 60 * 60 * 1000; // 30 days in milliseconds
+const MONTHLY_PPT_LIMIT = 3;
+
+function getCurrentMonth(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+}
 
 function isAccountActive(accountId: string): boolean {
-    const inactiveTimestamp = inactiveAccounts.get(accountId);
-    if (!inactiveTimestamp) return true;
+    const currentMonth = getCurrentMonth();
+    const usage = monthlyUsage.get(accountId);
     
-    const now = Date.now();
-    if (now - inactiveTimestamp > ONE_MONTH) {
-        // Reactivate account after 1 month
-        inactiveAccounts.delete(accountId);
-        console.log(`Account ${accountId} reactivated after 1 month`);
+    // If no usage record or it's a new month, account is active
+    if (!usage || usage.month !== currentMonth) {
         return true;
     }
     
-    return false;
+    // Check if account has reached monthly limit
+    return usage.count < MONTHLY_PPT_LIMIT;
 }
 
-function deactivateAccount(accountId: string): void {
-    inactiveAccounts.set(accountId, Date.now());
-    console.log(`Account ${accountId} deactivated for 1 month`);
+function incrementAccountUsage(accountId: string): void {
+    const currentMonth = getCurrentMonth();
+    const usage = monthlyUsage.get(accountId);
+    
+    if (!usage || usage.month !== currentMonth) {
+        // New month or first usage - reset/initialize
+        monthlyUsage.set(accountId, { month: currentMonth, count: 1 });
+        console.log(`Account ${accountId} usage initialized for ${currentMonth}: 1/${MONTHLY_PPT_LIMIT}`);
+    } else {
+        // Increment usage for current month
+        usage.count += 1;
+        monthlyUsage.set(accountId, usage);
+        console.log(`Account ${accountId} usage updated for ${currentMonth}: ${usage.count}/${MONTHLY_PPT_LIMIT}`);
+        
+        if (usage.count >= MONTHLY_PPT_LIMIT) {
+            console.log(`Account ${accountId} has reached monthly limit and will be disabled until next month`);
+        }
+    }
+}
+
+function disableAccountForMonth(accountId: string): void {
+    const currentMonth = getCurrentMonth();
+    monthlyUsage.set(accountId, { month: currentMonth, count: MONTHLY_PPT_LIMIT });
+    console.log(`Account ${accountId} disabled for current month due to error`);
 }
 
 async function generatePPTWithFailover(requestData: any) {
@@ -91,7 +115,7 @@ async function generatePPTWithFailover(requestData: any) {
     if (activeAccounts.length === 0) {
         return {
             success: false,
-            error: 'All MagicSlides accounts are inactive',
+            error: 'All MagicSlides accounts have reached their monthly limit',
             accountsAttempted: 0
         };
     }
@@ -118,6 +142,10 @@ async function generatePPTWithFailover(requestData: any) {
             );
 
             console.log(`PPT generation successful with account ${account.id}`);
+            
+            // Increment usage count for successful generation
+            incrementAccountUsage(account.id);
+            
             return {
                 success: true,
                 data: response.data,
@@ -127,9 +155,9 @@ async function generatePPTWithFailover(requestData: any) {
         } catch (error: any) {
             lastError = error;
             console.error(`Account ${account.id} failed:`, error?.response?.status, error?.response?.data || error.message);
-
-            // Deactivate account on any failure for 1 month
-            deactivateAccount(account.id);
+            
+            // Disable account for current month on any error
+            disableAccountForMonth(account.id);
             
             // Continue to next account
             continue;
