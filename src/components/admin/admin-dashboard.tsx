@@ -5,11 +5,12 @@ import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Users, CreditCard, BarChart3, Coins, FileText, Brain, Network, BookOpen } from 'lucide-react';
+import { LogOut, Users, CreditCard, BarChart3, UserPlus, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminUsersTable from './admin-users-table';
 import AdminPaymentsTable from './admin-payments-table';
 import AdminStatsCards from './admin-stats-cards';
+import CreateUserForm from './create-user-form';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -17,11 +18,16 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [stats, setStats] = useState<any>(null);
+  const [users, setUsers] = useState<any>(null);
+  const [payments, setPayments] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     fetchStats();
-  }, []);
+    if (activeTab === 'users') fetchUsers();
+    if (activeTab === 'payments') fetchPayments();
+  }, [activeTab]);
 
   const fetchStats = async () => {
     try {
@@ -39,6 +45,34 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   };
 
+  const fetchUsers = async () => {
+    try {
+      const response = await fetch('/api/admin/users');
+      if (response.ok) {
+        const data = await response.json();
+        setUsers(data);
+      } else {
+        toast.error('Failed to fetch users');
+      }
+    } catch (error) {
+      toast.error('Error fetching users');
+    }
+  };
+
+  const fetchPayments = async () => {
+    try {
+      const response = await fetch('/api/admin/payments');
+      if (response.ok) {
+        const data = await response.json();
+        setPayments(data);
+      } else {
+        toast.error('Failed to fetch payments');
+      }
+    } catch (error) {
+      toast.error('Error fetching payments');
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/auth', { method: 'DELETE' });
@@ -48,6 +82,27 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
       toast.error('Logout failed');
     }
   };
+
+  const refreshData = () => {
+    fetchStats();
+    if (activeTab === 'users') fetchUsers();
+    if (activeTab === 'payments') fetchPayments();
+  };
+
+  const handleUserCreated = () => {
+    refreshData();
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-t-blue-500 border-blue-200 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
@@ -83,7 +138,7 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           transition={{ duration: 0.5 }}
         >
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-8">
+            <TabsList className="grid w-full grid-cols-4 mb-8">
               <TabsTrigger value="overview" className="flex items-center space-x-2">
                 <BarChart3 className="h-4 w-4" />
                 <span>Overview</span>
@@ -95,6 +150,10 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
               <TabsTrigger value="payments" className="flex items-center space-x-2">
                 <CreditCard className="h-4 w-4" />
                 <span>Payments</span>
+              </TabsTrigger>
+              <TabsTrigger value="create-user" className="flex items-center space-x-2">
+                <UserPlus className="h-4 w-4" />
+                <span>Create User</span>
               </TabsTrigger>
             </TabsList>
 
@@ -108,6 +167,12 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
             <TabsContent value="payments">
               <AdminPaymentsTable />
+            </TabsContent>
+
+            <TabsContent value="create-user">
+              <div className="flex justify-center">
+                <CreateUserForm onUserCreated={handleUserCreated} />
+              </div>
             </TabsContent>
           </Tabs>
         </motion.div>

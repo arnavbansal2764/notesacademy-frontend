@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import AdminLogin from '@/components/admin/admin-login';
 import AdminDashboard from '@/components/admin/admin-dashboard';
+import { Toaster } from 'react-hot-toast';
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -50,6 +51,7 @@ export default function AdminPage() {
       ) : (
         <AdminLogin onLogin={handleLogin} />
       )}
+      <Toaster />
     </>
   );
 }
