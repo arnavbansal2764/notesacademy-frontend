@@ -5,12 +5,13 @@ import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogOut, Users, CreditCard, BarChart3, UserPlus, RefreshCw } from 'lucide-react';
+import { LogOut, Users, CreditCard, BarChart3, UserPlus, RefreshCw, Activity } from 'lucide-react';
 import toast from 'react-hot-toast';
 import AdminUsersTable from './admin-users-table';
 import AdminPaymentsTable from './admin-payments-table';
 import AdminStatsCards from './admin-stats-cards';
 import CreateUserForm from './create-user-form';
+import MagicSlidesDashboard from './magic-slides-dashboard';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -93,6 +94,31 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
     refreshData();
   };
 
+  const tabs = [
+    { id: 'overview', label: 'Overview', icon: BarChart3 },
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'payments', label: 'Payments', icon: CreditCard },
+    { id: 'magic-slides', label: 'MagicSlides', icon: Activity },
+    { id: 'create-user', label: 'Create User', icon: UserPlus }
+  ];
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return <AdminStatsCards stats={stats} isLoading={isLoading} />;
+      case 'users':
+        return <AdminUsersTable />;
+      case 'payments':
+        return <AdminPaymentsTable />;
+      case 'magic-slides':
+        return <MagicSlidesDashboard />;
+      case 'create-user':
+        return <CreateUserForm onUserCreated={handleUserCreated} />;
+      default:
+        return <AdminStatsCards stats={stats} isLoading={isLoading} />;
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center">
@@ -138,23 +164,13 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
           transition={{ duration: 0.5 }}
         >
           <Tabs defaultValue="overview" className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-8">
-              <TabsTrigger value="overview" className="flex items-center space-x-2">
-                <BarChart3 className="h-4 w-4" />
-                <span>Overview</span>
-              </TabsTrigger>
-              <TabsTrigger value="users" className="flex items-center space-x-2">
-                <Users className="h-4 w-4" />
-                <span>Users</span>
-              </TabsTrigger>
-              <TabsTrigger value="payments" className="flex items-center space-x-2">
-                <CreditCard className="h-4 w-4" />
-                <span>Payments</span>
-              </TabsTrigger>
-              <TabsTrigger value="create-user" className="flex items-center space-x-2">
-                <UserPlus className="h-4 w-4" />
-                <span>Create User</span>
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-5 mb-8">
+              {tabs.map((tab) => (
+                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center space-x-2">
+                  <tab.icon className="h-4 w-4" />
+                  <span>{tab.label}</span>
+                </TabsTrigger>
+              ))}
             </TabsList>
 
             <TabsContent value="overview">
@@ -167,6 +183,10 @@ export default function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
             <TabsContent value="payments">
               <AdminPaymentsTable />
+            </TabsContent>
+
+            <TabsContent value="magic-slides">
+              <MagicSlidesDashboard />
             </TabsContent>
 
             <TabsContent value="create-user">

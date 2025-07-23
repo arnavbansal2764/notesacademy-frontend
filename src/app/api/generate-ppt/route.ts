@@ -4,142 +4,149 @@ import { getServerSession } from 'next-auth/next';
 import { authOptions } from '@/lib/authOptions';
 import prisma from '@/lib/prisma';
 import { checkAndDeductCoins } from '@/lib/coinUtils';
-
-// Multiple MagicSlides accounts for failover
-const magicSlidesAccounts = [
-    {
-        id: 'account_1',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_2 || '9384c726-a01e-4722-8c8c-c0a809434b04',
-        email: process.env.MAGICSLIDES_EMAIL_2 || 'notesinstitute@gmail.com'
-    },
-    {
-        id: 'account_2',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_3 || '570f0f39-9683-42bb-b80c-132c5051d2fe',
-        email: process.env.MAGICSLIDES_EMAIL_3 || 'arnavbansal.bt23cse@pec.edu.in'
-    },
-    {
-        id: 'account_3',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_4 || '54bfa2b0-8dbb-4e25-b773-837f75df70c0',
-        email: process.env.MAGICSLIDES_EMAIL_4 || 'paras1201paras@gmail.com'
-    },
-    {
-        id: 'account_4',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_5 || '679445ad-55d9-4f62-a903-99ee881561d0',
-        email: process.env.MAGICSLIDES_EMAIL_5 || 'mocktestninja@gmail.com'
-    },
-    {
-        id: 'account_5',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_6 || '071620df-c95c-400e-9156-4bc079592e4d',
-        email: process.env.MAGICSLIDES_EMAIL_6 || 'notesacademy00@gmail.com'
-    },
-    {
-        id: 'account_6',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_7 || '42718117-6055-406a-aebc-551cc3bbb454',
-        email: process.env.MAGICSLIDES_EMAIL_7 || 'contactnotesacademy@gmail.com'
-    },
-    {
-        id: 'account_7',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_8 || '62f153bc-6c99-4bd7-a8e5-2fd0ca5213ae',
-        email: process.env.MAGICSLIDES_EMAIL_8 || 'pb.parasbansal@gmail.com'
-    },
-    {
-        id: 'account_8',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_9 || '5fd7292c-6334-4675-827d-01ed91f4d483',
-        email: process.env.MAGICSLIDES_EMAIL_9 || 'pbansal.analytics@gmail.com'
-    },
-    {
-        id: 'account_9',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_10 || 'e83d5411-9e30-4cc7-ac7c-08516d1f9ef0',
-        email: process.env.MAGICSLIDES_EMAIL_10 || 'virendermamta@gmail.com'
-    },
-    {
-        id: 'account_10',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_11 || '1f89c4ac-6ee0-491a-b039-b1c94a724f49',
-        email: process.env.MAGICSLIDES_EMAIL_11 || 'vinamratasolutions@gmail.com'
-    },
-    {
-        id: 'account_11',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_11 || 'ee1972e6-d4b2-48ec-b0ec-f969fdd726fa',
-        email: process.env.MAGICSLIDES_EMAIL_11 || 'pb.onlinecourses@gmail.com'
-    },
-    {
-        id: 'account_12',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_12 || 'a02b2373-2643-42b7-9ced-c04b9abcb188',
-        email: process.env.MAGICSLIDES_EMAIL_12 || 'officeseekho@gmail.com'
-    },
-    {
-        id: 'account_13',
-        accessId: process.env.MAGICSLIDES_ACCESS_ID_13 || '4d97611a-7ef5-4461-b4eb-33cf7fe80afa',
-        email: process.env.MAGICSLIDES_EMAIL_13 || 'soni.pooja968@gmail.com'
-    },
-];
-
-// Monthly usage tracker (resets on 1st of each month)
-const monthlyUsage = new Map<string, { month: string, count: number }>(); // accountId -> { month: 'YYYY-MM', count: number }
-
-const MONTHLY_PPT_LIMIT = 3;
+import { seedMagicSlidesAccounts } from '@/lib/seedMagicSlidesAccounts';
 
 function getCurrentMonth(): string {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 }
 
-function isAccountActive(accountId: string): boolean {
-    const currentMonth = getCurrentMonth();
-    const usage = monthlyUsage.get(accountId);
+async function ensureMagicSlidesAccountsExist() {
+    // Always run seed on each deployment/restart - it will only create missing accounts
+    console.log('Ensuring MagicSlides accounts exist...');
+    const result = await seedMagicSlidesAccounts();
     
-    // If no usage record or it's a new month, account is active
-    if (!usage || usage.month !== currentMonth) {
-        return true;
+    if (!result.success) {
+        console.error('Failed to seed accounts:', result.error);
+        throw new Error('Failed to initialize MagicSlides accounts');
     }
     
-    // Check if account has reached monthly limit
-    return usage.count < MONTHLY_PPT_LIMIT;
+    console.log(result.message);
 }
 
-function incrementAccountUsage(accountId: string): void {
+async function renewAccountsIfNeeded() {
     const currentMonth = getCurrentMonth();
-    const usage = monthlyUsage.get(accountId);
     
-    if (!usage || usage.month !== currentMonth) {
-        // New month or first usage - reset/initialize
-        monthlyUsage.set(accountId, { month: currentMonth, count: 1 });
-        console.log(`Account ${accountId} usage initialized for ${currentMonth}: 1/${MONTHLY_PPT_LIMIT}`);
-    } else {
-        // Increment usage for current month
-        usage.count += 1;
-        monthlyUsage.set(accountId, usage);
-        console.log(`Account ${accountId} usage updated for ${currentMonth}: ${usage.count}/${MONTHLY_PPT_LIMIT}`);
-        
-        if (usage.count >= MONTHLY_PPT_LIMIT) {
-            console.log(`Account ${accountId} has reached monthly limit and will be disabled until next month`);
+    // Find accounts that need renewal (different lastResetMonth)
+    const accountsToRenew = await prisma.magicSlidesAccount.findMany({
+        where: {
+            lastResetMonth: {
+                not: currentMonth
+            }
         }
+    });
+
+    if (accountsToRenew.length > 0) {
+        // Reset usage, activate ALL accounts, and reset monthly limit for new month
+        await prisma.magicSlidesAccount.updateMany({
+            where: {
+                lastResetMonth: {
+                    not: currentMonth
+                }
+            },
+            data: {
+                currentUsage: 0,
+                isActive: true, // Reactivate all accounts on monthly renewal
+                lastResetMonth: currentMonth
+            }
+        });
+        
+        console.log(`🔄 MONTHLY RENEWAL: Renewed ${accountsToRenew.length} MagicSlides accounts for month ${currentMonth}`);
+        console.log(`✅ All accounts reactivated with fresh usage limits (3 PPTs each)`);
     }
 }
 
-function disableAccountForMonth(accountId: string): void {
-    const currentMonth = getCurrentMonth();
-    monthlyUsage.set(accountId, { month: currentMonth, count: MONTHLY_PPT_LIMIT });
-    console.log(`Account ${accountId} disabled for current month due to error`);
+async function getActiveAccounts() {
+    // Ensure accounts exist and check for monthly renewal
+    await ensureMagicSlidesAccountsExist();
+    await renewAccountsIfNeeded();
+
+    // Get active accounts with remaining usage
+    return await prisma.magicSlidesAccount.findMany({
+        where: {
+            isActive: true,
+            currentUsage: {
+                lt: 3 // Less than monthly limit
+            }
+        },
+        orderBy: {
+            currentUsage: 'asc' // Prefer accounts with lower usage
+        }
+    });
+}
+
+async function incrementAccountUsage(accountId: string) {
+    await prisma.magicSlidesAccount.update({
+        where: {
+            accountId: accountId
+        },
+        data: {
+            currentUsage: {
+                increment: 1
+            }
+        }
+    });
+
+    // Check if account reached limit and disable it
+    const account = await prisma.magicSlidesAccount.findUnique({
+        where: { accountId }
+    });
+
+    if (account && account.currentUsage >= account.monthlyLimit) {
+        await prisma.magicSlidesAccount.update({
+            where: { accountId },
+            data: { isActive: false }
+        });
+        console.log(`⚠️ Account ${accountId} disabled after reaching monthly limit (${account.currentUsage}/${account.monthlyLimit})`);
+    }
+}
+
+async function disableAccountOnError(accountId: string, error: any) {
+    try {
+        await prisma.magicSlidesAccount.update({
+            where: {
+                accountId: accountId
+            },
+            data: {
+                isActive: false
+            }
+        });
+        
+        const errorInfo = error?.response?.status ? 
+            `HTTP ${error.response.status}` : 
+            error?.message || 'Unknown error';
+            
+        console.log(`❌ Account ${accountId} DISABLED in database due to error: ${errorInfo}`);
+        
+        // Log detailed error for debugging
+        if (error?.response?.data) {
+            console.log(`Error details for ${accountId}:`, error.response.data);
+        }
+        
+    } catch (dbError) {
+        console.error(`Failed to disable account ${accountId} in database:`, dbError);
+    }
 }
 
 async function generatePPTWithFailover(requestData: any) {
     let lastError: any = null;
-    const activeAccounts = magicSlidesAccounts.filter(account => isAccountActive(account.id));
+    const activeAccounts = await getActiveAccounts();
     
     if (activeAccounts.length === 0) {
         return {
             success: false,
-            error: 'All MagicSlides accounts have reached their monthly limit',
+            error: 'All MagicSlides accounts have reached their monthly limit or are disabled',
             accountsAttempted: 0
         };
     }
+
+    console.log(`🚀 Starting PPT generation with ${activeAccounts.length} active accounts available`);
 
     for (let i = 0; i < activeAccounts.length; i++) {
         const account = activeAccounts[i];
 
         try {
-            console.log(`Attempting PPT generation with account ${account.id}: ${account.email}`);
+            console.log(`📝 Attempting PPT generation with ${account.accountId}: ${account.email} (Usage: ${account.currentUsage}/${account.monthlyLimit})`);
 
             const response = await axios.post(
                 'https://api.magicslides.app/public/api/ppt_from_topic',
@@ -156,29 +163,37 @@ async function generatePPTWithFailover(requestData: any) {
                 }
             );
 
-            console.log(`PPT generation successful with account ${account.id}`);
+            console.log(`✅ PPT generation successful with ${account.accountId}`);
             
             // Increment usage count for successful generation
-            incrementAccountUsage(account.id);
+            await incrementAccountUsage(account.accountId);
             
             return {
                 success: true,
                 data: response.data,
-                accountUsed: account.id
+                accountUsed: account.accountId
             };
 
         } catch (error: any) {
             lastError = error;
-            console.error(`Account ${account.id} failed:`, error?.response?.status, error?.response?.data || error.message);
             
-            // Disable account for current month on any error
-            disableAccountForMonth(account.id);
+            // Log detailed error information
+            const errorStatus = error?.response?.status;
+            const errorData = error?.response?.data;
+            const errorMessage = error?.message;
+            
+            console.error(`❌ Account ${account.accountId} failed with status ${errorStatus}:`, errorData || errorMessage);
+            
+            // Disable account in database due to error
+            await disableAccountOnError(account.accountId, error);
             
             // Continue to next account
             continue;
         }
     }
 
+    console.error(`💥 All ${activeAccounts.length} active accounts failed`);
+    
     return {
         success: false,
         error: lastError?.response?.data || lastError?.message || 'All active MagicSlides accounts failed',

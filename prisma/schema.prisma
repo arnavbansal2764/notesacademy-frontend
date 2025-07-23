@@ -104,3 +104,18 @@ model ppt {
 
   @@map("ppt_results")
 }
+
+model MagicSlidesAccount {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  accountId         String   @unique // account_1, account_2, etc.
+  accessId          String
+  email             String
+  isActive          Boolean  @default(true)
+  monthlyLimit      Int      @default(3)
+  currentUsage      Int      @default(0)
+  lastResetMonth    String   // Format: "YYYY-MM"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@map("magic_slides_accounts")
+}

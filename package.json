@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "npx prisma generate && npx prisma db push && next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "seed:magicslides": "npx tsx src/lib/seedMagicSlidesAccounts.ts",
+    "postdeploy": "npm run seed:magicslides"
   },
   "dependencies": {
     "@prisma/client": "^6.5.0",
