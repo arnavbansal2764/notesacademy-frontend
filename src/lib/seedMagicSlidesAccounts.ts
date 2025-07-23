@@ -19,6 +19,30 @@ const accountsData = [
     {
         accountId: 'account_14', accessId: '27be4652-76d2-4c37-add9-eeedf31bc2bd', email: 'main.topperninja@gmail.com', isActive: true
     },
+    {
+        accountId: 'account_15', accessId: '9384c726-a01e-4722-8c8c-c0a809434b04', email: 'platform@notesinstitute.in', isActive: true
+    },
+    {
+        accountId: 'account_16', accessId: '8c63df1a-08bb-46b5-8efb-35b2dad24323', email: 'info@notesacademy.in', isActive: true
+    },
+    {
+        accountId: 'account_17', accessId: 'f5761b94-a631-4b98-934b-bedb2d398250', email: 'alerts@topperninja.in', isActive: true
+    },
+    {
+        accountId: 'account_18', accessId: 'f9931c04-d1f4-4d1f-a969-f8360ba34903', email: 'owner@medialyticsninja.com', isActive: true
+    },
+    {
+        accountId: 'account_19', accessId: '92024fb5-56c5-43c3-aca9-fe5407755270', email: 'alerts@officeseekho.com', isActive: true
+    },
+    {
+        accountId: 'account_20', accessId: '96e4bec5-e35f-4774-bd5f-6bacdaae0c2f', email: 'alerts@cbse.topperninja.in', isActive: true
+    },
+    {
+        accountId: 'account_21', accessId: 'd5a3135c-2377-4fc1-8789-c7e1067a7436', email: 'alerts@mocktestninja.com', isActive: true
+    },
+    {
+        accountId: 'account_22', accessId: 'f2792bcf-68d4-48d4-8748-486a6333a66e', email: 'alerts@vinamratasolutions.in', isActive: true
+    }
 ];
 
 function getCurrentMonth(): string {
