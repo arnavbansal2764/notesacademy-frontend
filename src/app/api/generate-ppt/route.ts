@@ -156,7 +156,6 @@ async function generatePPTWithFailover(requestData: any) {
                     accessId: account.accessId
                 },
                 {
-                    timeout: 30000,
                     headers: {
                         'Content-Type': 'application/json'
                     }
