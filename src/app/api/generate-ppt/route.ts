@@ -57,6 +57,21 @@ const magicSlidesAccounts = [
         accessId: process.env.MAGICSLIDES_ACCESS_ID_11 || '1f89c4ac-6ee0-491a-b039-b1c94a724f49',
         email: process.env.MAGICSLIDES_EMAIL_11 || 'vinamratasolutions@gmail.com'
     },
+    {
+        id: 'account_11',
+        accessId: process.env.MAGICSLIDES_ACCESS_ID_11 || 'ee1972e6-d4b2-48ec-b0ec-f969fdd726fa',
+        email: process.env.MAGICSLIDES_EMAIL_11 || 'pb.onlinecourses@gmail.com'
+    },
+    {
+        id: 'account_12',
+        accessId: process.env.MAGICSLIDES_ACCESS_ID_12 || 'a02b2373-2643-42b7-9ced-c04b9abcb188',
+        email: process.env.MAGICSLIDES_EMAIL_12 || 'officeseekho@gmail.com'
+    },
+    {
+        id: 'account_13',
+        accessId: process.env.MAGICSLIDES_ACCESS_ID_13 || '4d97611a-7ef5-4461-b4eb-33cf7fe80afa',
+        email: process.env.MAGICSLIDES_EMAIL_13 || 'soni.pooja968@gmail.com'
+    },
 ];
 
 // Monthly usage tracker (resets on 1st of each month)
