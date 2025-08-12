@@ -229,3 +229,51 @@ export async function sendWelcomeEmail(data: WelcomeEmailData) {
     return { success: false, error };
   }
 }
+
+export async function sendPasswordResetEmail(email: string, resetLink: string) {
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <title>Reset Your Password - Notes Academy</title>
+    </head>
+    <body style="font-family: Arial, sans-serif; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
+      <div style="text-align: center; border-bottom: 3px solid #1976d2; padding-bottom: 20px; margin-bottom: 30px;">
+        <h1 style="color: #1976d2; margin: 0;">Notes Academy</h1>
+        <p style="color: #666; margin: 5px 0 0 0;">Password Reset Request</p>
+      </div>
+      <div style="background-color: #f9f9f9; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
+        <h2 style="color: #1976d2; margin-top: 0;">Reset Your Password</h2>
+        <p>We received a request to reset your password. Click the button below to set a new password:</p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${resetLink}" style="background: #1976d2; color: #fff; padding: 12px 28px; border-radius: 5px; text-decoration: none; font-weight: bold;">Reset Password</a>
+        </div>
+        <p>If you did not request this, you can safely ignore this email.</p>
+      </div>
+      <div style="text-align: center; padding-top: 20px; border-top: 1px solid #ddd; margin-top: 30px;">
+        <p style="color: #666; font-size: 14px;">
+          If you have any questions, please contact our support team.<br>
+          This is an automated email, please do not reply directly.
+        </p>
+      </div>
+    </body>
+    </html>
+  `;
+
+  const mailOptions = {
+    from: `"Notes Academy" <contactnotesacademy@gmail.com>`,
+    to: email,
+    bcc: 'notesacademy00@gmail.com',
+    subject: `Reset Your Password - Notes Academy`,
+    html: htmlContent,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending password reset email:', error);
+    return { success: false, error };
+  }
+}

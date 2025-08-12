@@ -119,3 +119,13 @@ model MagicSlidesAccount {
 
   @@map("magic_slides_accounts")
 }
+
+model PasswordResetToken {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@map("password_reset_tokens")
+}
